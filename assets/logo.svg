@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sphère centrale -->
+  <circle cx="60" cy="60" r="12" fill="#3498db"/>
+  
+  <!-- Ondes concentriques ondulées -->
+  <circle cx="60" cy="60" r="24" fill="none" stroke="#3498db" stroke-width="2" stroke-dasharray="4 2"/>
+  <path d="M24,60 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0" fill="none" stroke="#3498db" stroke-width="2" stroke-dasharray="6 3" stroke-linecap="round"/>
+  <path d="M12,60 a48,48 0 1,1 96,0 a48,48 0 1,1 -96,0" fill="none" stroke="#3498db" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"/>
+  <path d="M0,60 a60,60 0 1,1 120,0 a60,60 0 1,1 -120,0" fill="none" stroke="#3498db" stroke-width="1" stroke-dasharray="8 5" stroke-linecap="round"/>
+</svg>
