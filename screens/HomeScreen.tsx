@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
-import Sound from 'react-native-sound';
 
 // Type pour les conversations
 type Conversation = {
@@ -16,77 +15,13 @@ type Conversation = {
   unread: boolean;
   archived?: boolean;
   hasFile?: boolean;
+  hasOrb?: boolean;
 };
 
 const HomeScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
   const [conversationsList, setConversationsList] = useState<Conversation[]>([]);
-  const [notificationSound, setNotificationSound] = useState<Sound | null>(null);
-  
-  // Initialisation du son de notification
-  useEffect(() => {
-    // Initialisation du son pour les notifications de messages
-    Sound.setCategory('Playback');
-    const soundName = Platform.OS === 'ios' ? 'message_notification.mp3' : 'message_notification';
-    const soundType = Platform.OS === 'ios' ? '' : '.mp3';
-    
-    const msgSound = new Sound(soundName + soundType, 
-                           Sound.MAIN_BUNDLE, 
-                           (error) => {
-      if (error) {
-        console.log('Erreur lors du chargement du son de notification', error);
-        return;
-      }
-      // Son chargé avec succès
-      msgSound.setVolume(0.7);
-      setNotificationSound(msgSound);
-    });
-
-    return () => {
-      // Nettoyage à la destruction du composant
-      if (msgSound) {
-        msgSound.release();
-      }
-    };
-  }, []);
-  
-  // Fonction pour jouer le son de notification
-  const playMessageNotificationSound = useCallback(() => {
-    if (notificationSound) {
-      console.log('Lecture du son de notification depuis HomeScreen');
-      notificationSound.stop();  // Arrêter toute lecture précédente
-      notificationSound.setVolume(0.7); // Volume modéré
-      notificationSound.play((success) => {
-        if (!success) {
-          console.log('Erreur lors de la lecture du son de notification (HomeScreen)');
-        } else {
-          console.log('Son de notification joué avec succès (HomeScreen)');
-        }
-      });
-    } else {
-      console.log('Création d\'une nouvelle instance pour le son de notification (HomeScreen)');
-      try {
-        const soundName = Platform.OS === 'android' ? 'message_notification.mp3' : 'message_notification.mp3';
-        const sound = new Sound(soundName, Sound.MAIN_BUNDLE, (error) => {
-          if (error) {
-            console.log(`Erreur lors du chargement du son (${soundName}):`, error);
-            return;
-          }
-          
-          console.log('Son de notification chargé avec succès, lecture');
-          sound.setVolume(0.7);
-          sound.play((success) => {
-            console.log('Lecture directe du son de notification:', success ? 'réussie' : 'échouée');
-          });
-          // Conserver cette instance pour les prochaines utilisations
-          setNotificationSound(sound);
-        });
-      } catch (e) {
-        console.log('Exception lors de la création du son de notification:', e);
-      }
-    }
-  }, [notificationSound]);
   
   // Chargement initial des conversations
   const loadConversations = () => {
@@ -138,9 +73,6 @@ const HomeScreen = () => {
         return updated;
       });
       
-      // Jouer le son de notification pour le nouveau message
-      playMessageNotificationSound();
-      
       setRefreshing(false);
     }, 1000);
   };
@@ -164,14 +96,11 @@ const HomeScreen = () => {
           }
           return updated;
         });
-        
-        // Jouer le son de notification
-        playMessageNotificationSound();
       }
     }, 15000); // 15 secondes après le chargement
     
     return () => clearTimeout(timer);
-  }, [conversationsList.length, playMessageNotificationSound]);
+  }, [conversationsList.length]);
   
   // Plus besoin de configurer l'en-tête ici, il sera configuré dans App.tsx
 
@@ -186,6 +115,7 @@ const HomeScreen = () => {
       isHQ: true,
       unread: true,
       hasFile: true,
+      hasOrb: true,
     },
     {
       id: '2',
@@ -196,6 +126,7 @@ const HomeScreen = () => {
       isHQ: false,
       unread: false,
       hasFile: false,
+      hasOrb: false,
     },
     {
       id: '3',
@@ -276,6 +207,7 @@ const HomeScreen = () => {
           <Text style={styles.avatar}>{item.avatar}</Text>
           {item.isHQ && <View style={styles.hqBadge}><Text style={styles.hqBadgeText}>HQ</Text></View>}
           {item.hasFile && <View style={styles.fileBadge}><Text style={styles.fileBadgeText}>📁</Text></View>}
+          {item.hasOrb && <Text style={styles.orbBadge}>⚪</Text>}
         </View>
         
         <View style={styles.conversationContent}>
@@ -403,6 +335,11 @@ const styles = StyleSheet.create({
   },
   fileBadgeText: {
     fontSize: 8,
+  },
+  orbBadge: {
+    fontSize: 14,
+    color: '#007AFF',
+    marginHorizontal: 4,
   },
   emptyContainer: {
     flex: 1,

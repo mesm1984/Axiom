@@ -31,21 +31,26 @@ function main() {
   ensureDirectoryExists(androidRawDir);
   ensureDirectoryExists(iosResourcesDir);
 
-  // Vérifier si les fichiers audio existent déjà dans le dossier Android
+  // Répertoire source pour les fichiers audio
+  const sourceDir = path.resolve(__dirname, '../assets/sounds');
+  const axiomVibeSource = path.join(sourceDir, 'axiom_vibe.mp3');
+  const messageNotifSource = path.join(sourceDir, 'message_notification.mp3');
   const axiomVibeAndroid = path.join(androidRawDir, 'axiom_vibe.mp3');
   const messageNotifAndroid = path.join(androidRawDir, 'message_notification.mp3');
-  
-  // Copier les fichiers vers iOS s'ils existent dans Android
-  if (fs.existsSync(axiomVibeAndroid)) {
-    copyFile(axiomVibeAndroid, path.join(iosResourcesDir, 'axiom_vibe.mp3'));
+
+  // Copier depuis assets/sounds vers Android raw et iOS Resources
+  if (fs.existsSync(axiomVibeSource)) {
+    copyFile(axiomVibeSource, axiomVibeAndroid);
+    copyFile(axiomVibeSource, path.join(iosResourcesDir, 'axiom_vibe.mp3'));
   } else {
-    console.error(`Le fichier source ${axiomVibeAndroid} n'existe pas!`);
+    console.error(`Le fichier source ${axiomVibeSource} n'existe pas!`);
   }
-  
-  if (fs.existsSync(messageNotifAndroid)) {
-    copyFile(messageNotifAndroid, path.join(iosResourcesDir, 'message_notification.mp3'));
+
+  if (fs.existsSync(messageNotifSource)) {
+    copyFile(messageNotifSource, messageNotifAndroid);
+    copyFile(messageNotifSource, path.join(iosResourcesDir, 'message_notification.mp3'));
   } else {
-    console.error(`Le fichier source ${messageNotifAndroid} n'existe pas!`);
+    console.error(`Le fichier source ${messageNotifSource} n'existe pas!`);
   }
 
   console.log('Préparation des ressources terminée!');

@@ -4,8 +4,8 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 // Composant pour l'en-tête avec logo
 const HeaderWithLogo: React.FC = () => (
   <View style={styles.headerContainer}>
-    <Image 
-      source={require('../images/logo_axiom.png')} 
+    <Image
+      source={require('../images/logo_axiom.png')}
       style={styles.logo}
       resizeMode="contain"
     />

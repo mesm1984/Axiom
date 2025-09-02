@@ -35,26 +35,24 @@ L’ordre de développement recommandé pour maximiser la valeur utilisateur et 
 - ✅ Correction des problèmes de linting et nettoyage du code
 - ✅ Mise en place de la structure de projet React Native standard
 - ✅ Configuration de Git pour le versioning du code
+  * Empreinte de sécurité pour vérification d'identité
+  * Stockage sécurisé des clés avec AsyncStorage
 
-### 12.3 Travaux restants pour une application complète
 
 #### Fonctionnalités prioritaires
-- ⬜ Implémentation du chiffrement de bout en bout (E2EE)
+- ✅ Implémentation du chiffrement de bout en bout (E2EE)
 - ⬜ Connexion au backend pour l'authentification et l'échange de clés
 - ⬜ Transfert de fichiers P2P réel (pas seulement simulé)
 - ⬜ Implémentation complète de la reprise de transfert interrompu
 - ⬜ Gestion intelligente du stockage local (analyse, nettoyage)
-
 #### Sécurité
 - ⬜ Configuration du chiffrement des messages et fichiers
 - ⬜ Stockage sécurisé des clés cryptographiques
 - ⬜ Audit de sécurité externe
-- ⬜ Implémentation des mécanismes de vérification d'identité
 - ⬜ Protection contre les attaques MITM (Man in the Middle)
 - ⬜ Protection contre les captures d'écran (en tenant compte des limitations des systèmes d'exploitation)
   * Blocage des captures d'écran sur Android (FLAG_SECURE)
   * Floutage automatique du contenu sensible sur iOS (limitation : impossible de bloquer complètement)
-  * Notification à l'utilisateur lorsqu'une capture d'écran est détectée
   * Option pour masquer automatiquement les informations sensibles en arrière-plan
 
 #### Stabilité et infrastructure
@@ -63,78 +61,59 @@ L’ordre de développement recommandé pour maximiser la valeur utilisateur et 
 - ⬜ Optimisation des performances pour appareils bas de gamme
 - ⬜ Mise en place de tests automatisés (unitaires, intégration)
 - ⬜ Système de télémétrie respectant la vie privée (opt-in uniquement)
-
 #### Finalisation du produit
 - ⬜ Conception et mise en œuvre du processus d'onboarding
 - ⬜ Documentation utilisateur complète
 - ⬜ Documentation technique pour les composants open-source
-- ⬜ Publication sur les stores (Google Play, App Store)
 - ⬜ Mise en place d'un système de retour utilisateur
 
 ### 12.4 Planning prévisionnel révisé
 - **Phase 1 (1-2 mois)** : Finalisation des fonctionnalités de base et de l'interface utilisateur
-- **Phase 2 (2-3 mois)** : Implémentation du chiffrement E2EE et des transferts P2P
 - **Phase 3 (1-2 mois)** : Tests de sécurité, optimisations et finalisation
 - **Phase 4 (1 mois)** : Préparation au lancement et déploiement
 
 L'application pourrait être prête pour un lancement beta dans 4-5 mois, et pour un lancement complet dans 6-8 mois en fonction des ressources disponibles et des priorités.
 
 ## 13. Protection contre les utilisateurs malveillants
-
 La sécurité d'Axiom ne se limite pas uniquement à la protection des données, mais inclut également des mécanismes pour prévenir et gérer les utilisations malveillantes de la plateforme. Cette section décrit les stratégies et fonctionnalités à mettre en œuvre pour protéger l'écosystème Axiom et ses utilisateurs légitimes.
 
 ### 13.1 Système d'authentification robuste
 
-- ⬜ **Authentification à deux facteurs (2FA)**
   * Support des applications d'authentification (Google Authenticator, Authy)
   * Options de vérification par SMS ou email
   * Clés de sécurité physiques (YubiKey, etc.)
 
-- ⬜ **Vérification d'identité progressive**
   * Vérification initiale par email ou téléphone
   * Niveaux de vérification additionnels pour les fonctionnalités sensibles
   * Système de confiance évolutif basé sur l'historique de l'utilisateur
 
 - ⬜ **Politiques de mots de passe et gestion des sessions**
   * Exigences de mots de passe forts avec indicateur visuel de robustesse
-  * Détection et blocage des mots de passe compromis (via API de vérification)
   * Rotation périodique recommandée des mots de passe
   * Expiration automatique des sessions inactives
   * Possibilité de voir et terminer les sessions actives sur d'autres appareils
 
-### 13.2 Contrôle des abus et modération
 
 - ⬜ **Système de signalement intégré**
   * Interface simple pour signaler des messages ou comportements inappropriés
   * Catégorisation des types d'abus pour un traitement approprié
-  * Possibilité de bloquer des utilisateurs indésirables
 
 - ⬜ **Détection automatisée des comportements suspects**
   * Analyse des patterns de comportement anormaux (envoi massif, etc.)
   * Détection des tentatives d'hameçonnage (phishing)
   * Système anti-spam pour les invitations et messages
 
-- ⬜ **Limites et restrictions dynamiques**
   * Limitation du nombre de messages par période pour les nouveaux comptes
   * Augmentation progressive des limites pour les comptes de confiance
   * Rate limiting adaptatif selon le comportement
 
 ### 13.3 Protections techniques
-
-- ⬜ **Sécurité de l'infrastructure**
   * Protection contre les attaques DDoS
   * Pare-feu applicatif (WAF) pour le backend
   * Validation stricte des entrées sur toutes les API
 
-- ⬜ **Prévention des abus techniques**
-  * Protection contre le reverse engineering de l'application
-  * Détection des environnements rootés/jailbreakés avec limitations appropriées
-  * Obfuscation du code critique
-
 - ⬜ **Audit et surveillance**
   * Journalisation sécurisée des événements critiques
-  * Système de détection d'intrusion et d'anomalies
-  * Alertes en temps réel pour les activités suspectes
 
 ### 13.4 Politiques d'utilisation et transparence
 
