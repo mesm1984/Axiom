@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import E2EEncryptionService from '../services/E2EEncryptionService';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,12 +23,23 @@ const HomeScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
   const [conversationsList, setConversationsList] = useState<Conversation[]>([]);
+  const [decryptedNames, setDecryptedNames] = useState<{[id: string]: string}>({});
   
   // Chargement initial des conversations
-  const loadConversations = () => {
-    // Ici, on simule le chargement des données
-    // Dans une vraie application, ce serait une requête vers une API ou une base de données locale
+  const loadConversations = async () => {
+    // Simuler chargement des données
     setConversationsList(initialConversations);
+    // Chiffrer les noms de contacts à l'initialisation
+    const encryptedNames: {[id: string]: {ciphertext: string, nonce: string}} = {};
+    for (const conv of initialConversations) {
+      encryptedNames[conv.id] = await E2EEncryptionService.encryptMetadata(conv.contactName);
+    }
+    // Déchiffrer pour affichage (dans une vraie app, on stockerait chiffré)
+    const decrypted: {[id: string]: string} = {};
+    for (const id in encryptedNames) {
+      decrypted[id] = await E2EEncryptionService.decryptMetadata(encryptedNames[id].ciphertext, encryptedNames[id].nonce) || '';
+    }
+    setDecryptedNames(decrypted);
   };
   
   // Fonction pour simuler la vérification de nouveaux messages
@@ -213,6 +225,7 @@ const HomeScreen = () => {
         <View style={styles.conversationContent}>
           <View style={styles.conversationHeader}>
             <Text style={styles.contactName}>{item.contactName}</Text>
+            <Text style={styles.contactName}>{decryptedNames[item.id] || '...'}</Text>
             <Text style={styles.time}>{item.time}</Text>
           </View>
           

@@ -1,3 +1,8 @@
+import TestScreen from './screens/TestScreen';
+import ReactNativeBiometrics from 'react-native-biometrics';
+import { useEffect } from 'react';
+import { Platform } from 'react-native';
+import { NativeModules } from 'react-native';
 /**
  * Axiom - Application de messagerie sécurisée
  * 
@@ -23,6 +28,7 @@ export type RootStackParamList = {
   FileTransfer: undefined;
   Settings: undefined;
   Storage: undefined;
+  Test: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -31,6 +37,27 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const LogoTitle = () => <HeaderWithLogo />;
 
 function App() {
+  useEffect(() => {
+    async function checkBiometric() {
+      const rnBiometrics = new ReactNativeBiometrics();
+      const { available, biometryType } = await rnBiometrics.isSensorAvailable();
+      if (available) {
+        const result = await rnBiometrics.simplePrompt({ promptMessage: 'Authentification requise' });
+        if (!result.success) {
+          // Fermer l'app ou afficher un écran verrouillé
+          // ...code pour masquer l'UI ou quitter...
+        }
+      }
+    }
+    checkBiometric();
+  }, []);
+  useEffect(() => {
+    if (Platform.OS === 'android' && NativeModules) {
+      if (NativeModules?.RNAndroidWindow) {
+        NativeModules.RNAndroidWindow.setFlagSecure(true);
+      }
+    }
+  }, []);
   const isDarkMode = useColorScheme() === 'dark';
   
   return (
@@ -38,7 +65,7 @@ function App() {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <NavigationContainer>
         <Stack.Navigator 
-          initialRouteName="Home"
+          initialRouteName="Test"
           screenOptions={{
             headerStyle: {
               backgroundColor: '#0A1929',
@@ -91,6 +118,14 @@ function App() {
             options={{ 
               title: 'Gestion du stockage',
               headerBackTitle: 'Retour',
+            }} 
+          />
+          <Stack.Screen 
+            name="Test" 
+            component={TestScreen} 
+            options={{ 
+              title: "Écran de test",
+              headerBackTitle: "Retour",
             }} 
           />
         </Stack.Navigator>

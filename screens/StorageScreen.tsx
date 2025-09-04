@@ -1,60 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import RNFS from 'react-native-fs';
 
 // Type pour les fichiers stockés
 type StoredFile = {
   id: string;
   name: string;
-  size: string;
+  path: string;
+  size: number;
   type: string;
-  date: string;
-  isSelected?: boolean;
+  mtime: string | number | Date;
 };
 
 const StorageScreen = () => {
-  const [files, setFiles] = useState<StoredFile[]>([
-    {
-      id: '1',
-      name: 'photo_vacances.jpg',
-      size: '2.3 MB',
-      type: 'image/jpeg',
-      date: '2023-08-15',
-    },
-    {
-      id: '2',
-      name: 'presentation_projet.pptx',
-      size: '5.7 MB',
-      type: 'application/pptx',
-      date: '2023-08-10',
-    },
-    {
-      id: '3',
-      name: 'document_important.pdf',
-      size: '1.2 MB',
-      type: 'application/pdf',
-      date: '2023-08-05',
-    },
-    {
-      id: '4',
-      name: 'musique.mp3',
-      size: '4.8 MB',
-      type: 'audio/mp3',
-      date: '2023-08-01',
-    },
-    {
-      id: '5',
-      name: 'video_anniversaire.mp4',
-      size: '15.2 MB',
-      type: 'video/mp4',
-      date: '2023-07-25',
-    },
-  ]);
-
+  const [files, setFiles] = useState<StoredFile[]>([]);
+  const [totalSize, setTotalSize] = useState<number>(0);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  
-  // Stockage total et utilisé (simulé)
-  const totalStorage = 1024; // 1 Go en Mo
-  const usedStorage = 120; // 120 Mo
+
+  // Ajout d'une variable pour la taille maximale (exemple : 1 Go)
+  const MAX_STORAGE = 1024 * 1024 * 1024; // 1 Go en octets
+  const usedPercent = Math.min((totalSize / MAX_STORAGE) * 100, 100);
+
+  useEffect(() => {
+    const scanFiles = async () => {
+      const dirPath = RNFS.DocumentDirectoryPath;
+      const result = await RNFS.readDir(dirPath);
+      let size = 0;
+      const fileList: StoredFile[] = await Promise.all(result.map(async (file: any) => {
+        const stats = await RNFS.stat(file.path);
+        size += Number(stats.size);
+        return {
+          id: file.name,
+          name: file.name,
+          path: file.path,
+          size: Number(stats.size),
+          mtime: stats.mtime,
+          type: file.name.split('.').pop() || 'unknown',
+        };
+      }));
+      setFiles(fileList);
+      setTotalSize(size);
+    };
+    scanFiles();
+  }, []);
+
+  // Notification si espace critique
+  useEffect(() => {
+    if (totalSize > MAX_STORAGE * 0.9) {
+      Alert.alert(
+        'Stockage presque plein',
+        'Votre espace de stockage est presque saturé. Pensez à supprimer ou sauvegarder vos fichiers.'
+      );
+    }
+  }, [totalSize, MAX_STORAGE]);
 
   const toggleFileSelection = (id: string) => {
     if (selectedFiles.includes(id)) {
@@ -64,7 +62,7 @@ const StorageScreen = () => {
     }
   };
 
-  const deleteSelected = () => {
+  const deleteSelected = async () => {
     if (selectedFiles.length === 0) {
       Alert.alert('Aucun fichier sélectionné', 'Veuillez sélectionner au moins un fichier à supprimer.');
       return;
@@ -81,9 +79,20 @@ const StorageScreen = () => {
         {
           text: 'Supprimer',
           style: 'destructive',
-          onPress: () => {
-            setFiles(files.filter(file => !selectedFiles.includes(file.id)));
+          onPress: async () => {
+            for (const file of files) {
+              if (selectedFiles.includes(file.id)) {
+                try {
+                  await RNFS.unlink(file.path);
+                } catch (e) {}
+              }
+            }
+            const updatedFiles = files.filter(file => !selectedFiles.includes(file.id));
+            setFiles(updatedFiles);
             setSelectedFiles([]);
+            // Recalculer la taille totale
+            const newTotalSize = updatedFiles.reduce((acc, f) => acc + f.size, 0);
+            setTotalSize(newTotalSize);
           },
         },
       ]
@@ -114,6 +123,35 @@ const StorageScreen = () => {
     }
   };
 
+  const autoClean = async () => {
+    const now = Date.now();
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const LARGE_FILE = 50 * 1024 * 1024;
+    const filesToDelete = files.filter(f => f.size > LARGE_FILE || (typeof f.mtime === 'number' && now - f.mtime > THIRTY_DAYS));
+    if (filesToDelete.length === 0) {
+      Alert.alert('Nettoyage automatique', 'Aucun fichier volumineux ou ancien à supprimer.');
+      return;
+    }
+    Alert.alert(
+      'Nettoyage automatique',
+      `Voulez-vous supprimer ${filesToDelete.length} fichier(s) volumineux ou anciens ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer', style: 'destructive', onPress: async () => {
+            for (const file of filesToDelete) {
+              try { await RNFS.unlink(file.path); } catch (e) {}
+            }
+            const updatedFiles = files.filter(f => !filesToDelete.includes(f));
+            setFiles(updatedFiles);
+            setSelectedFiles([]);
+            setTotalSize(updatedFiles.reduce((acc, f) => acc + f.size, 0));
+          }
+        }
+      ]
+    );
+  };
+
   const getFileIcon = (type: string) => {
     if (type.startsWith('image')) return '🖼️';
     if (type.startsWith('video')) return '🎬';
@@ -133,7 +171,7 @@ const StorageScreen = () => {
         <Text style={styles.fileIcon}>{getFileIcon(item.type)}</Text>
         <View style={styles.fileDetails}>
           <Text style={styles.fileName}>{item.name}</Text>
-          <Text style={styles.fileInfo}>{item.size} • {item.date}</Text>
+          <Text style={styles.fileInfo}>{(item.size / 1024).toFixed(1)} Ko • {typeof item.mtime === 'string' ? item.mtime : new Date(item.mtime).toLocaleDateString()}</Text>
         </View>
         <View style={styles.checkBox}>
           {isSelected && <Text style={styles.checkMark}>✓</Text>}
@@ -142,20 +180,16 @@ const StorageScreen = () => {
     );
   };
 
-  // Calculate storage percentage
-  const storagePercentage = (usedStorage / totalStorage) * 100;
-  const freeStorage = totalStorage - usedStorage;
+  // ...totalMo supprimé car non utilisé...
 
   return (
     <View style={styles.container}>
       <View style={styles.storageInfo}>
-        <Text style={styles.storageTitle}>Espace de stockage</Text>
-        <View style={styles.storageBar}>
-          <View style={[styles.storageUsed, { width: `${storagePercentage}%` }]} />
+        <Text style={styles.storageTitle}>Espace de stockage utilisé</Text>
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBar, { width: `${usedPercent}%` }]} />
         </View>
-        <Text style={styles.storageText}>
-          {usedStorage} Mo utilisés sur {totalStorage} Mo ({freeStorage} Mo disponibles)
-        </Text>
+        <Text style={styles.storageText}>{(totalSize / (1024 * 1024)).toFixed(2)} Mo utilisés / 1024 Mo</Text>
       </View>
 
       <View style={styles.actionsContainer}>
@@ -164,19 +198,14 @@ const StorageScreen = () => {
             {selectedFiles.length === files.length ? 'Désélectionner tout' : 'Sélectionner tout'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.deleteButton, selectedFiles.length === 0 && styles.disabledButton]}
-          onPress={deleteSelected}
-          disabled={selectedFiles.length === 0}
-        >
+        <TouchableOpacity style={[styles.actionButton, styles.deleteButton, selectedFiles.length === 0 && styles.disabledButton]} onPress={deleteSelected} disabled={selectedFiles.length === 0}>
           <Text style={styles.actionButtonText}>Supprimer</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.shareButton, selectedFiles.length === 0 && styles.disabledButton]}
-          onPress={shareSelected}
-          disabled={selectedFiles.length === 0}
-        >
+        <TouchableOpacity style={[styles.actionButton, styles.shareButton, selectedFiles.length === 0 && styles.disabledButton]} onPress={shareSelected} disabled={selectedFiles.length === 0}>
           <Text style={styles.actionButtonText}>Partager</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionButton, styles.autoCleanButton]} onPress={autoClean}>
+          <Text style={styles.actionButtonText}>Nettoyage auto</Text>
         </TouchableOpacity>
       </View>
 
@@ -243,6 +272,9 @@ const styles = StyleSheet.create({
   shareButton: {
     backgroundColor: '#4CAF50',
   },
+  autoCleanButton: {
+    backgroundColor: '#FFA726',
+  },
   disabledButton: {
     backgroundColor: '#cccccc',
   },
@@ -302,6 +334,18 @@ const styles = StyleSheet.create({
   checkMark: {
     color: '#0084FF',
     fontWeight: 'bold',
+  },
+  progressBarContainer: {
+    height: 12,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginVertical: 8,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#0084FF',
+    borderRadius: 6,
   },
 });
 

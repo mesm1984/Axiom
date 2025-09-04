@@ -6,6 +6,7 @@ import * as Keychain from 'react-native-keychain';
 // libsodium-like via tweetnacl
 import nacl from 'tweetnacl';
 import * as naclUtil from 'tweetnacl-util';
+import { encryptMetadata, decryptMetadata } from '../utils/crypto';
 
 /**
  * Service de chiffrement E2EE pour Axiom
@@ -13,6 +14,53 @@ import * as naclUtil from 'tweetnacl-util';
  * et RSA-2048 pour l'échange sécurisé des clés
  */
 class E2EEncryptionService {
+  /**
+   * Chiffre une métadonnée (nom de fichier, contact)
+   * @param {string} metadata - La métadonnée à chiffrer
+   * @returns {{ciphertext: string, nonce: string}} - Métadonnée chiffrée
+   */
+  static async encryptMetadata(metadata: string): Promise<{ciphertext: string, nonce: string}> {
+    const key = await E2EEncryptionService.getMetadataKey();
+    return encryptMetadata(metadata, key);
+  }
+
+  /**
+   * Déchiffre une métadonnée
+   * @param {string} ciphertext - Le texte chiffré
+   * @param {string} nonce - Le nonce utilisé
+   * @returns {string|null} - Métadonnée déchiffrée ou null
+   */
+  static async decryptMetadata(ciphertext: string, nonce: string): Promise<string|null> {
+    const key = await E2EEncryptionService.getMetadataKey();
+    return decryptMetadata(ciphertext, nonce, key);
+  }
+
+  /**
+   * Récupère la clé de chiffrement des métadonnées (stockée de façon sécurisée)
+   */
+  static async getMetadataKey(): Promise<string> {
+    // On utilise le Keychain pour stocker la clé symétrique des métadonnées
+    const keychain = await Keychain.getGenericPassword({ service: 'metadata-key' });
+    if (keychain && keychain.password) {
+      return keychain.password;
+    }
+    // Si la clé n'existe pas, on la génère et la stocke
+    const newKey = naclUtil.encodeBase64(nacl.randomBytes(nacl.secretbox.keyLength));
+    await Keychain.setGenericPassword('metadata', newKey, { service: 'metadata-key' });
+    return newKey;
+  }
+  async rotateKeys() {
+    // Génère une nouvelle paire de clés et sauvegarde
+    this.generateUserKeyPair();
+    this.generateUserKeyPairSodium();
+    await this.saveUserKeys();
+    this.logSecurityEvent('Rotation des clés effectuée');
+  }
+  logSecurityEvent(event: string, details?: any) {
+    const timestamp = new Date().toISOString();
+    console.log(`[SECURITY][${timestamp}] ${event}`, details || '');
+    // En production, envoyer vers un backend sécurisé ou fichier local
+  }
   private static instance: E2EEncryptionService;
   private userKeyPair: any = null;
   private contactKeys: Map<string, string> = new Map();
