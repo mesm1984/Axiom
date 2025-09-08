@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 // Pas besoin de React Navigation pour la version web
 
 // Type pour les conversations
@@ -29,7 +35,7 @@ const HomeScreen = () => {
       id: '2',
       contactName: 'Jean Martin',
       avatar: '👨',
-      lastMessage: 'J\'ai reçu le fichier, merci',
+      lastMessage: "J'ai reçu le fichier, merci",
       time: '11:15',
       isHQ: false,
       unread: false,
@@ -65,23 +71,31 @@ const HomeScreen = () => {
 
   const renderConversationItem = ({ item }: { item: Conversation }) => {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.conversationItem}
-        onPress={() => console.log("Navigation vers la conversation avec " + item.contactName)}
+        onPress={() =>
+          console.log(
+            'Navigation vers la conversation avec ' + item.contactName,
+          )
+        }
       >
         <View style={styles.avatarContainer}>
           <Text style={styles.avatar}>{item.avatar}</Text>
-          {item.isHQ && <View style={styles.hqBadge}><Text style={styles.hqBadgeText}>HQ</Text></View>}
+          {item.isHQ && (
+            <View style={styles.hqBadge}>
+              <Text style={styles.hqBadgeText}>HQ</Text>
+            </View>
+          )}
         </View>
-        
+
         <View style={styles.conversationContent}>
           <View style={styles.conversationHeader}>
             <Text style={styles.contactName}>{item.contactName}</Text>
             <Text style={styles.time}>{item.time}</Text>
           </View>
-          
+
           <View style={styles.conversationFooter}>
-            <Text 
+            <Text
               style={[styles.lastMessage, item.unread && styles.unreadMessage]}
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -98,20 +112,20 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.conversationsList}>
-        {conversations.map((item) => renderConversationItem({ item }))}
+        {conversations.map(item => renderConversationItem({ item }))}
       </ScrollView>
-      
+
       <View style={styles.actionsContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionButton, styles.newConversationButton]}
-          onPress={() => console.log("Nouvelle conversation")}
+          onPress={() => console.log('Nouvelle conversation')}
         >
           <Text style={styles.actionButtonText}>+ Nouvelle conversation</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.actionButton, styles.settingsButton]}
-          onPress={() => console.log("Paramètres")}
+          onPress={() => console.log('Paramètres')}
         >
           <Text style={styles.actionButtonText}>⚙️ Paramètres</Text>
         </TouchableOpacity>

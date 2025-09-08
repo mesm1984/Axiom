@@ -17,9 +17,9 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: [
-              '@babel/preset-env', 
-              '@babel/preset-react', 
-              '@babel/preset-typescript'
+              '@babel/preset-env',
+              '@babel/preset-react',
+              '@babel/preset-typescript',
             ],
           },
         },
@@ -44,14 +44,14 @@ module.exports = {
       'react-native-screens': false,
       '@react-navigation/native': false,
       '@react-native-community/masked-view': false,
-      'react-native-safe-area-context': false
-    }
+      'react-native-safe-area-context': false,
+    },
   },
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, 'index.html'),
-      filename: 'index.html'
-    })
+      filename: 'index.html',
+    }),
   ],
   devServer: {
     static: {
@@ -59,6 +59,6 @@ module.exports = {
     },
     port: 9000, // Utilisons un port différent
     open: true,
-    hot: true
+    hot: true,
   },
 };

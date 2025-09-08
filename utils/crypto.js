@@ -47,12 +47,22 @@ export function encryptMessage(message, recipientPublicKey, senderSecretKey) {
 }
 
 // Déchiffrement d'un message (asymétrique)
-export function decryptMessage(ciphertext, nonce, senderPublicKey, recipientSecretKey) {
+export function decryptMessage(
+  ciphertext,
+  nonce,
+  senderPublicKey,
+  recipientSecretKey,
+) {
   const boxUint8 = naclUtil.decodeBase64(ciphertext);
   const nonceUint8 = naclUtil.decodeBase64(nonce);
   const senderKeyUint8 = naclUtil.decodeBase64(senderPublicKey);
   const recipientKeyUint8 = naclUtil.decodeBase64(recipientSecretKey);
-  const messageUint8 = nacl.box.open(boxUint8, nonceUint8, senderKeyUint8, recipientKeyUint8);
+  const messageUint8 = nacl.box.open(
+    boxUint8,
+    nonceUint8,
+    senderKeyUint8,
+    recipientKeyUint8,
+  );
   if (!messageUint8) return null;
   return naclUtil.encodeUTF8(messageUint8);
 }

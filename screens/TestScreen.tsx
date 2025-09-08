@@ -5,7 +5,10 @@ const TestScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Écran de test React Native</Text>
-      <Text style={styles.text}>Si cet écran s'affiche, votre environnement React Native/TypeScript fonctionne correctement.</Text>
+      <Text style={styles.text}>
+        Si cet écran s'affiche, votre environnement React Native/TypeScript
+        fonctionne correctement.
+      </Text>
     </View>
   );
 };

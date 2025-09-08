@@ -14,7 +14,11 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env', '@babel/preset-react', '@babel/preset-typescript'],
+            presets: [
+              '@babel/preset-env',
+              '@babel/preset-react',
+              '@babel/preset-typescript',
+            ],
           },
         },
       },
@@ -36,8 +40,8 @@ module.exports = {
     extensions: ['.web.tsx', '.web.ts', '.web.js', '.tsx', '.ts', '.js'],
     fallback: {
       'react-native-screens': false,
-      '@react-navigation/native': false
-    }
+      '@react-navigation/native': false,
+    },
   },
   devServer: {
     static: {

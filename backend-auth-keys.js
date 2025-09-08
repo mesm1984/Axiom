@@ -14,7 +14,8 @@ const users = {}; // { username: { password, publicKey } }
 // Inscription
 app.post('/register', (req, res) => {
   const { username, password, publicKey } = req.body;
-  if (users[username]) return res.status(400).json({ error: 'Utilisateur déjà existant' });
+  if (users[username])
+    return res.status(400).json({ error: 'Utilisateur déjà existant' });
   users[username] = { password, publicKey };
   res.json({ success: true });
 });
@@ -23,7 +24,8 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const user = users[username];
-  if (!user || user.password !== password) return res.status(401).json({ error: 'Identifiants invalides' });
+  if (!user || user.password !== password)
+    return res.status(401).json({ error: 'Identifiants invalides' });
   const token = jwt.sign({ username }, SECRET, { expiresIn: '1d' });
   res.json({ token });
 });
@@ -49,5 +51,8 @@ app.post('/key', (req, res) => {
 
 const PORT = 4000;
 app.listen(PORT, () => {
-  console.log('Backend d\'authentification et d\'échange de clés démarré sur port', PORT);
+  console.log(
+    "Backend d'authentification et d'échange de clés démarré sur port",
+    PORT,
+  );
 });

@@ -1,6 +1,6 @@
 /**
  * Axiom - Application de messagerie sécurisée (version web)
- * 
+ *
  * @format
  */
 
@@ -22,9 +22,11 @@ function App() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Axiom App (Version Web)</Text>
-        <Text style={styles.headerSubtitle}>Cette version est simplifiée pour le web</Text>
+        <Text style={styles.headerSubtitle}>
+          Cette version est simplifiée pour le web
+        </Text>
       </View>
-      
+
       <View style={styles.content}>
         <HomeScreen />
       </View>

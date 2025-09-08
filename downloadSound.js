@@ -13,14 +13,16 @@ console.log('Téléchargement du fichier audio...');
 console.log(`Destination: ${destination}`);
 
 const file = fs.createWriteStream(destination);
-https.get(fileUrl, (response) => {
-  response.pipe(file);
+https
+  .get(fileUrl, response => {
+    response.pipe(file);
 
-  file.on('finish', () => {
-    file.close();
-    console.log('Téléchargement terminé !');
+    file.on('finish', () => {
+      file.close();
+      console.log('Téléchargement terminé !');
+    });
+  })
+  .on('error', err => {
+    fs.unlink(destination, () => {});
+    console.error(`Erreur lors du téléchargement: ${err.message}`);
   });
-}).on('error', (err) => {
-  fs.unlink(destination, () => {});
-  console.error(`Erreur lors du téléchargement: ${err.message}`);
-});

@@ -8,5 +8,7 @@ if (rootElement) {
   const root = createRoot(rootElement);
   root.render(<AxiomAppWeb />);
 } else {
-  console.error("Élément racine introuvable. Assurez-vous que l'élément avec l'ID 'root' existe dans le HTML.");
+  console.error(
+    "Élément racine introuvable. Assurez-vous que l'élément avec l'ID 'root' existe dans le HTML.",
+  );
 }

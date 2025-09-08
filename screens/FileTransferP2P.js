@@ -1,5 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Button, Text, Platform, ProgressBarAndroid, ProgressViewIOS } from 'react-native';
+import {
+  View,
+  Button,
+  Text,
+  Platform,
+  ProgressBarAndroid,
+  ProgressViewIOS,
+} from 'react-native';
 import DocumentPicker from 'react-native-document-picker';
 import { RTCPeerConnection } from 'react-native-webrtc';
 import io from 'socket.io-client';
@@ -13,7 +20,9 @@ const styles = {
 
 const SIGNALING_SERVER_URL = 'ws://10.0.2.2:3000';
 const socket = io(SIGNALING_SERVER_URL);
-const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+const configuration = {
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+};
 
 export default function FileTransferP2P() {
   const [progress, setProgress] = useState(0);
@@ -26,29 +35,29 @@ export default function FileTransferP2P() {
   useEffect(() => {
     peerConnection.current = new RTCPeerConnection(configuration);
 
-    peerConnection.current.onicecandidate = (event) => {
+    peerConnection.current.onicecandidate = event => {
       if (event.candidate) {
         socket.emit('ice-candidate', event.candidate);
       }
     };
 
-    peerConnection.current.ondatachannel = (event) => {
+    peerConnection.current.ondatachannel = event => {
       dataChannel.current = event.channel;
       dataChannel.current.onmessage = handleReceiveMessage;
     };
 
-    socket.on('offer', async (offer) => {
+    socket.on('offer', async offer => {
       await peerConnection.current.setRemoteDescription(offer);
       const answer = await peerConnection.current.createAnswer();
       await peerConnection.current.setLocalDescription(answer);
       socket.emit('answer', answer);
     });
 
-    socket.on('answer', async (answer) => {
+    socket.on('answer', async answer => {
       await peerConnection.current.setRemoteDescription(answer);
     });
 
-    socket.on('ice-candidate', async (candidate) => {
+    socket.on('ice-candidate', async candidate => {
       if (candidate) await peerConnection.current.addIceCandidate(candidate);
     });
 
@@ -73,26 +82,36 @@ export default function FileTransferP2P() {
       await peerConnection.current.setLocalDescription(offer);
       socket.emit('offer', offer);
 
-      const res = await DocumentPicker.pickSingle({ type: [DocumentPicker.types.allFiles] });
+      const res = await DocumentPicker.pickSingle({
+        type: [DocumentPicker.types.allFiles],
+      });
       const fileReader = new FileReader();
       const chunkSize = 16 * 1024;
       let offset = 0;
 
-      fileReader.onload = (e) => {
+      fileReader.onload = e => {
         const buffer = e.target.result;
         let chunkIndex = 0;
         sentChunks.current = {}; // Reset
         while (offset < buffer.byteLength) {
           const chunk = buffer.slice(offset, offset + chunkSize);
           const chunkData = Array.from(new Uint8Array(chunk));
-          dataChannel.current.send(JSON.stringify({ type: 'chunk', index: chunkIndex, data: chunkData }));
+          dataChannel.current.send(
+            JSON.stringify({
+              type: 'chunk',
+              index: chunkIndex,
+              data: chunkData,
+            }),
+          );
           sentChunks.current[chunkIndex] = chunkData;
           offset += chunkSize;
           chunkIndex++;
           setProgress(offset / buffer.byteLength);
         }
         sentTotal.current = chunkIndex;
-        dataChannel.current.send(JSON.stringify({ type: 'eof', total: chunkIndex }));
+        dataChannel.current.send(
+          JSON.stringify({ type: 'eof', total: chunkIndex }),
+        );
         setStatus('Fichier envoyé !');
       };
       fileReader.readAsArrayBuffer(res);
@@ -121,7 +140,8 @@ export default function FileTransferP2P() {
           allData.push(...receivedChunks[i]);
         }
         const arrayBuffer = new Uint8Array(allData).buffer;
-        const filePath = RNFS.DownloadDirectoryPath + '/fichier_recu_' + Date.now();
+        const filePath =
+          RNFS.DownloadDirectoryPath + '/fichier_recu_' + Date.now();
         function arrayBufferToBase64(buffer) {
           let binary = '';
           const bytes = new Uint8Array(buffer);
@@ -144,20 +164,26 @@ export default function FileTransferP2P() {
         for (let i = 0; i < expectedChunks; i++) {
           if (!receivedChunks[i]) missing.push(i);
         }
-        dataChannel.current.send(JSON.stringify({ type: 'resume-request', missing }));
+        dataChannel.current.send(
+          JSON.stringify({ type: 'resume-request', missing }),
+        );
         setStatus('Reprise demandée pour chunks : ' + missing.join(','));
       }
     } else if (msg.type === 'resume-request') {
       if (sentChunks.current && msg.missing) {
-        msg.missing.forEach((missedIndex) => {
+        msg.missing.forEach(missedIndex => {
           if (sentChunks.current[missedIndex]) {
             dataChannel.current.send(
-              JSON.stringify({ type: 'chunk', index: missedIndex, data: sentChunks.current[missedIndex] })
+              JSON.stringify({
+                type: 'chunk',
+                index: missedIndex,
+                data: sentChunks.current[missedIndex],
+              }),
             );
           }
         });
         dataChannel.current.send(
-          JSON.stringify({ type: 'eof', total: sentTotal.current })
+          JSON.stringify({ type: 'eof', total: sentTotal.current }),
         );
         setStatus('Chunks manquants renvoyés');
       }

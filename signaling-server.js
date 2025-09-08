@@ -1,4 +1,3 @@
-
 // Serveur de signalisation WebRTC avec rooms et sécurité par token
 // Utilise socket.io pour relayer les messages entre clients d'une même room
 
@@ -15,7 +14,7 @@ const io = socketIo(server, {
 // Token partagé (à remplacer par une vraie auth plus tard)
 const SHARED_TOKEN = 'axiom-secret';
 
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   console.log('Client connecté :', socket.id);
 
   // Authentification simple par token et room
@@ -32,19 +31,19 @@ io.on('connection', (socket) => {
   });
 
   // Relais des offres
-  socket.on('offer', (offer) => {
+  socket.on('offer', offer => {
     if (!socket.room) return;
     socket.to(socket.room).emit('offer', offer);
   });
 
   // Relais des réponses
-  socket.on('answer', (answer) => {
+  socket.on('answer', answer => {
     if (!socket.room) return;
     socket.to(socket.room).emit('answer', answer);
   });
 
   // Relais des ICE
-  socket.on('ice-candidate', (candidate) => {
+  socket.on('ice-candidate', candidate => {
     if (!socket.room) return;
     socket.to(socket.room).emit('ice-candidate', candidate);
   });
@@ -56,5 +55,8 @@ io.on('connection', (socket) => {
 
 const PORT = 3000;
 server.listen(PORT, () => {
-  console.log('Serveur de signalisation WebRTC (rooms + sécurité) démarré sur port', PORT);
+  console.log(
+    'Serveur de signalisation WebRTC (rooms + sécurité) démarré sur port',
+    PORT,
+  );
 });

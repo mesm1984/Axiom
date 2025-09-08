@@ -2,7 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 // Chemins des répertoires
-const androidRawDir = path.resolve(__dirname, '../android/app/src/main/res/raw');
+const androidRawDir = path.resolve(
+  __dirname,
+  '../android/app/src/main/res/raw',
+);
 const iosResourcesDir = path.resolve(__dirname, '../ios/AxiomApp/Resources');
 
 // Fonction pour créer un répertoire s'il n'existe pas
@@ -26,7 +29,7 @@ function copyFile(source, destination) {
 // Fonction principale
 function main() {
   console.log('Préparation des ressources audio pour Android et iOS...');
-  
+
   // S'assurer que les répertoires de destination existent
   ensureDirectoryExists(androidRawDir);
   ensureDirectoryExists(iosResourcesDir);
@@ -36,7 +39,10 @@ function main() {
   const axiomVibeSource = path.join(sourceDir, 'axiom_vibe.mp3');
   const messageNotifSource = path.join(sourceDir, 'message_notification.mp3');
   const axiomVibeAndroid = path.join(androidRawDir, 'axiom_vibe.mp3');
-  const messageNotifAndroid = path.join(androidRawDir, 'message_notification.mp3');
+  const messageNotifAndroid = path.join(
+    androidRawDir,
+    'message_notification.mp3',
+  );
 
   // Copier depuis assets/sounds vers Android raw et iOS Resources
   if (fs.existsSync(axiomVibeSource)) {
@@ -48,7 +54,10 @@ function main() {
 
   if (fs.existsSync(messageNotifSource)) {
     copyFile(messageNotifSource, messageNotifAndroid);
-    copyFile(messageNotifSource, path.join(iosResourcesDir, 'message_notification.mp3'));
+    copyFile(
+      messageNotifSource,
+      path.join(iosResourcesDir, 'message_notification.mp3'),
+    );
   } else {
     console.error(`Le fichier source ${messageNotifSource} n'existe pas!`);
   }

@@ -80,9 +80,22 @@ export default function AuthScreen() {
   return (
     <View style={styles.container}>
       <Text>Inscription</Text>
-      <TextInput placeholder="Nom d'utilisateur" value={username} onChangeText={setUsername} />
-      <TextInput placeholder="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry />
-      <TextInput placeholder="Clé publique" value={publicKey} onChangeText={setPublicKey} />
+      <TextInput
+        placeholder="Nom d'utilisateur"
+        value={username}
+        onChangeText={setUsername}
+      />
+      <TextInput
+        placeholder="Mot de passe"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <TextInput
+        placeholder="Clé publique"
+        value={publicKey}
+        onChangeText={setPublicKey}
+      />
       <Button title="S'inscrire" onPress={register} />
       <Text style={styles.marginTop}>Connexion</Text>
       <Button title="Se connecter" onPress={login} />

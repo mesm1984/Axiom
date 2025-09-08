@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+} from 'react-native';
 
 // Écran d'accueil (HomeScreen)
 const HomeScreen = ({ onNavigate }) => {
@@ -18,7 +25,7 @@ const HomeScreen = ({ onNavigate }) => {
       id: '2',
       contactName: 'Jean Martin',
       avatar: '👨',
-      lastMessage: 'J\'ai reçu le fichier, merci',
+      lastMessage: "J'ai reçu le fichier, merci",
       time: '11:15',
       isHQ: false,
       unread: false,
@@ -52,26 +59,35 @@ const HomeScreen = ({ onNavigate }) => {
     },
   ];
 
-  const renderConversationItem = (item) => {
+  const renderConversationItem = item => {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         key={item.id}
         style={styles.conversationItem}
-        onPress={() => onNavigate('Conversation', { contactId: item.id, contactName: item.contactName })}
+        onPress={() =>
+          onNavigate('Conversation', {
+            contactId: item.id,
+            contactName: item.contactName,
+          })
+        }
       >
         <View style={styles.avatarContainer}>
           <Text style={styles.avatar}>{item.avatar}</Text>
-          {item.isHQ && <View style={styles.hqBadge}><Text style={styles.hqBadgeText}>HQ</Text></View>}
+          {item.isHQ && (
+            <View style={styles.hqBadge}>
+              <Text style={styles.hqBadgeText}>HQ</Text>
+            </View>
+          )}
         </View>
-        
+
         <View style={styles.conversationContent}>
           <View style={styles.conversationHeader}>
             <Text style={styles.contactName}>{item.contactName}</Text>
             <Text style={styles.time}>{item.time}</Text>
           </View>
-          
+
           <View style={styles.conversationFooter}>
-            <Text 
+            <Text
               style={[styles.lastMessage, item.unread && styles.unreadMessage]}
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -90,20 +106,20 @@ const HomeScreen = ({ onNavigate }) => {
       <View style={styles.headerContainer}>
         <Text style={styles.screenTitle}>Conversations</Text>
       </View>
-      
+
       <ScrollView style={styles.conversationsList}>
-        {conversations.map((item) => renderConversationItem(item))}
+        {conversations.map(item => renderConversationItem(item))}
       </ScrollView>
-      
+
       <View style={styles.actionsContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionButton, styles.newConversationButton]}
           onPress={() => onNavigate('Conversation', { isNew: true })}
         >
           <Text style={styles.actionButtonText}>+ Nouvelle conversation</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.actionButton, styles.settingsButton]}
           onPress={() => onNavigate('Settings')}
         >
@@ -117,17 +133,44 @@ const HomeScreen = ({ onNavigate }) => {
 // Écran de conversation (ConversationScreen)
 const ConversationScreen = ({ route, onNavigate }) => {
   const [message, setMessage] = useState('');
-  const contactName = route?.params?.contactName || "Nouvelle conversation";
+  const contactName = route?.params?.contactName || 'Nouvelle conversation';
   const isNew = route?.params?.isNew || false;
 
   // Messages simulés
-  const messages = isNew ? [] : [
-    { id: 1, text: 'Bonjour, comment vas-tu ?', sender: 'them', time: '10:30' },
-    { id: 2, text: 'Très bien merci, et toi ?', sender: 'me', time: '10:31' },
-    { id: 3, text: 'Bien aussi ! As-tu reçu les fichiers que je t\'ai envoyés hier ?', sender: 'them', time: '10:32' },
-    { id: 4, text: 'Oui, tout est parfait. Je les examine actuellement.', sender: 'me', time: '10:33' },
-    { id: 5, text: 'Super ! N\'hésite pas si tu as des questions.', sender: 'them', time: '10:35' },
-  ];
+  const messages = isNew
+    ? []
+    : [
+        {
+          id: 1,
+          text: 'Bonjour, comment vas-tu ?',
+          sender: 'them',
+          time: '10:30',
+        },
+        {
+          id: 2,
+          text: 'Très bien merci, et toi ?',
+          sender: 'me',
+          time: '10:31',
+        },
+        {
+          id: 3,
+          text: "Bien aussi ! As-tu reçu les fichiers que je t'ai envoyés hier ?",
+          sender: 'them',
+          time: '10:32',
+        },
+        {
+          id: 4,
+          text: 'Oui, tout est parfait. Je les examine actuellement.',
+          sender: 'me',
+          time: '10:33',
+        },
+        {
+          id: 5,
+          text: "Super ! N'hésite pas si tu as des questions.",
+          sender: 'them',
+          time: '10:35',
+        },
+      ];
 
   const sendMessage = () => {
     if (message.trim() !== '') {
@@ -141,18 +184,30 @@ const ConversationScreen = ({ route, onNavigate }) => {
   return (
     <View style={styles.screen}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => onNavigate('Home')} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => onNavigate('Home')}
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.screenTitle}>{contactName}</Text>
-        <TouchableOpacity onPress={() => onNavigate('FileTransfer')} style={styles.fileButton}>
+        <TouchableOpacity
+          onPress={() => onNavigate('FileTransfer')}
+          style={styles.fileButton}
+        >
           <Text style={styles.fileButtonText}>📎</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.messagesContainer}>
-        {messages.map((msg) => (
-          <View key={msg.id} style={[styles.messageBubble, msg.sender === 'me' ? styles.myMessage : styles.theirMessage]}>
+        {messages.map(msg => (
+          <View
+            key={msg.id}
+            style={[
+              styles.messageBubble,
+              msg.sender === 'me' ? styles.myMessage : styles.theirMessage,
+            ]}
+          >
             <Text style={styles.messageText}>{msg.text}</Text>
             <Text style={styles.messageTime}>{msg.time}</Text>
           </View>
@@ -183,10 +238,10 @@ const FileTransferScreen = ({ onNavigate }) => {
     { id: '1', name: 'Document.pdf', size: '2.4 MB', icon: '📄' },
     { id: '2', name: 'Photo.jpg', size: '1.8 MB', icon: '🖼️' },
     { id: '3', name: 'Présentation.pptx', size: '5.7 MB', icon: '📊' },
-    { id: '4', name: 'Tableau.xlsx', size: '1.2 MB', icon: '📉' }
+    { id: '4', name: 'Tableau.xlsx', size: '1.2 MB', icon: '📉' },
   ];
 
-  const selectFile = (file) => {
+  const selectFile = file => {
     setSelectedFile(file);
   };
 
@@ -205,17 +260,23 @@ const FileTransferScreen = ({ onNavigate }) => {
   return (
     <View style={styles.screen}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => onNavigate('Conversation')} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => onNavigate('Conversation')}
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.screenTitle}>Envoyer un fichier</Text>
       </View>
 
       <View style={styles.fileList}>
-        {files.map((file) => (
-          <TouchableOpacity 
+        {files.map(file => (
+          <TouchableOpacity
             key={file.id}
-            style={[styles.fileItem, selectedFile?.id === file.id && styles.selectedFileItem]}
+            style={[
+              styles.fileItem,
+              selectedFile?.id === file.id && styles.selectedFileItem,
+            ]}
             onPress={() => selectFile(file)}
           >
             <Text style={styles.fileIcon}>{file.icon}</Text>
@@ -227,7 +288,7 @@ const FileTransferScreen = ({ onNavigate }) => {
         ))}
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.sendFileButton, !selectedFile && styles.disabledButton]}
         onPress={sendFile}
         disabled={!selectedFile}
@@ -242,48 +303,83 @@ const FileTransferScreen = ({ onNavigate }) => {
 const SettingsScreen = ({ onNavigate }) => {
   const [notifications, setNotifications] = useState(true);
   const [hqMode, setHqMode] = useState(true);
-  
+
   const settings = [
-    { id: 'notifications', title: 'Notifications', value: notifications, toggle: () => setNotifications(!notifications) },
-    { id: 'hqMode', title: 'Mode haute qualité', value: hqMode, toggle: () => setHqMode(!hqMode) }
+    {
+      id: 'notifications',
+      title: 'Notifications',
+      value: notifications,
+      toggle: () => setNotifications(!notifications),
+    },
+    {
+      id: 'hqMode',
+      title: 'Mode haute qualité',
+      value: hqMode,
+      toggle: () => setHqMode(!hqMode),
+    },
   ];
-  
+
   const storageUsed = '2.7 GB';
   const storageLimit = '10 GB';
-  
+
   return (
     <View style={styles.screen}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => onNavigate('Home')} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => onNavigate('Home')}
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.screenTitle}>Paramètres</Text>
       </View>
-      
+
       <View style={styles.settingsContainer}>
-        {settings.map((setting) => (
+        {settings.map(setting => (
           <View key={setting.id} style={styles.settingItem}>
             <Text style={styles.settingTitle}>{setting.title}</Text>
-            <TouchableOpacity 
-              style={[styles.toggleButton, setting.value ? styles.toggleActive : styles.toggleInactive]} 
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                setting.value ? styles.toggleActive : styles.toggleInactive,
+              ]}
               onPress={setting.toggle}
             >
-              <View style={[styles.toggleCircle, setting.value && styles.toggleCircleActive]} />
+              <View
+                style={[
+                  styles.toggleCircle,
+                  setting.value && styles.toggleCircleActive,
+                ]}
+              />
             </TouchableOpacity>
           </View>
         ))}
-        
+
         <View style={styles.storageInfo}>
           <Text style={styles.settingTitle}>Stockage</Text>
-          <Text>{storageUsed} / {storageLimit}</Text>
+          <Text>
+            {storageUsed} / {storageLimit}
+          </Text>
           <View style={styles.storageBarContainer}>
-            <View style={[styles.storageBar, { width: `${(parseFloat(storageUsed) / parseFloat(storageLimit)) * 100}%` }]} />
+            <View
+              style={[
+                styles.storageBar,
+                {
+                  width: `${
+                    (parseFloat(storageUsed) / parseFloat(storageLimit)) * 100
+                  }%`,
+                },
+              ]}
+            />
           </View>
-          <TouchableOpacity style={styles.storageButton} onPress={() => onNavigate('Storage')}>
+          <TouchableOpacity
+            style={styles.storageButton}
+            onPress={() => onNavigate('Storage')}
+          >
             <Text style={styles.storageButtonText}>Gérer le stockage</Text>
           </TouchableOpacity>
         </View>
-        
+
         <TouchableOpacity style={styles.logoutButton}>
           <Text style={styles.logoutButtonText}>Déconnexion</Text>
         </TouchableOpacity>
@@ -304,29 +400,41 @@ const StorageScreen = ({ onNavigate }) => {
   return (
     <View style={styles.screen}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => onNavigate('Settings')} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => onNavigate('Settings')}
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.screenTitle}>Gestion du stockage</Text>
       </View>
 
       <View style={styles.storageOverview}>
-        <Text style={styles.storageTitle}>Utilisation du stockage: 2.7 GB / 10 GB</Text>
+        <Text style={styles.storageTitle}>
+          Utilisation du stockage: 2.7 GB / 10 GB
+        </Text>
         <View style={styles.storageBarContainer}>
           <View style={styles.storageBarFill} />
         </View>
       </View>
 
       <ScrollView style={styles.storageItemsList}>
-        {storageItems.map((item) => (
+        {storageItems.map(item => (
           <View key={item.id} style={styles.storageItem}>
             <Text style={styles.storageItemIcon}>{item.icon}</Text>
             <View style={styles.storageItemDetails}>
               <Text style={styles.storageItemType}>{item.type}</Text>
               <View style={styles.storageItemBarContainer}>
-                <View style={[styles.storageItemBar, { width: `${item.percentage}%` }]} />
+                <View
+                  style={[
+                    styles.storageItemBar,
+                    { width: `${item.percentage}%` },
+                  ]}
+                />
               </View>
-              <Text style={styles.storageItemSize}>{item.size} ({item.percentage}%)</Text>
+              <Text style={styles.storageItemSize}>
+                {item.size} ({item.percentage}%)
+              </Text>
             </View>
             <TouchableOpacity style={styles.storageItemButton}>
               <Text style={styles.storageItemButtonText}>Nettoyer</Text>
@@ -353,11 +461,16 @@ const AxiomAppWeb = () => {
   };
 
   const renderScreen = () => {
-    switch(currentScreen) {
+    switch (currentScreen) {
       case 'Home':
         return <HomeScreen onNavigate={navigate} />;
       case 'Conversation':
-        return <ConversationScreen route={{ params: routeParams }} onNavigate={navigate} />;
+        return (
+          <ConversationScreen
+            route={{ params: routeParams }}
+            onNavigate={navigate}
+          />
+        );
       case 'FileTransfer':
         return <FileTransferScreen onNavigate={navigate} />;
       case 'Settings':
@@ -375,10 +488,8 @@ const AxiomAppWeb = () => {
         <Text style={styles.headerTitle}>Axiom App</Text>
         <Text style={styles.headerSubtitle}>Messagerie sécurisée</Text>
       </View>
-      
-      <View style={styles.content}>
-        {renderScreen()}
-      </View>
+
+      <View style={styles.content}>{renderScreen()}</View>
     </View>
   );
 };
@@ -436,7 +547,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  
+
   // HomeScreen styles
   conversationsList: {
     flex: 1,
