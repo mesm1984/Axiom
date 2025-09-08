@@ -19,7 +19,9 @@ class E2EEncryptionService {
    * @param {string} metadata - La métadonnée à chiffrer
    * @returns {{ciphertext: string, nonce: string}} - Métadonnée chiffrée
    */
-  static async encryptMetadata(metadata: string): Promise<{ciphertext: string, nonce: string}> {
+  static async encryptMetadata(
+    metadata: string,
+  ): Promise<{ ciphertext: string; nonce: string }> {
     const key = await E2EEncryptionService.getMetadataKey();
     return encryptMetadata(metadata, key);
   }
@@ -30,7 +32,10 @@ class E2EEncryptionService {
    * @param {string} nonce - Le nonce utilisé
    * @returns {string|null} - Métadonnée déchiffrée ou null
    */
-  static async decryptMetadata(ciphertext: string, nonce: string): Promise<string|null> {
+  static async decryptMetadata(
+    ciphertext: string,
+    nonce: string,
+  ): Promise<string | null> {
     const key = await E2EEncryptionService.getMetadataKey();
     return decryptMetadata(ciphertext, nonce, key);
   }
@@ -40,13 +45,19 @@ class E2EEncryptionService {
    */
   static async getMetadataKey(): Promise<string> {
     // On utilise le Keychain pour stocker la clé symétrique des métadonnées
-    const keychain = await Keychain.getGenericPassword({ service: 'metadata-key' });
+    const keychain = await Keychain.getGenericPassword({
+      service: 'metadata-key',
+    });
     if (keychain && keychain.password) {
       return keychain.password;
     }
     // Si la clé n'existe pas, on la génère et la stocke
-    const newKey = naclUtil.encodeBase64(nacl.randomBytes(nacl.secretbox.keyLength));
-    await Keychain.setGenericPassword('metadata', newKey, { service: 'metadata-key' });
+    const newKey = naclUtil.encodeBase64(
+      nacl.randomBytes(nacl.secretbox.keyLength),
+    );
+    await Keychain.setGenericPassword('metadata', newKey, {
+      service: 'metadata-key',
+    });
     return newKey;
   }
   async rotateKeys() {
@@ -85,7 +96,7 @@ class E2EEncryptionService {
     try {
       // Charger les clés existantes depuis le stockage sécurisé
       await this.loadUserKeys();
-      
+
       // Si pas de clés, en générer de nouvelles
       if (!this.userKeyPair) {
         await this.generateUserKeyPair();
@@ -93,7 +104,7 @@ class E2EEncryptionService {
 
       console.log('Service E2E initialisé avec succès');
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation E2E:', error);
+      console.error("Erreur lors de l'initialisation E2E:", error);
       throw error;
     }
   }
@@ -108,13 +119,17 @@ class E2EEncryptionService {
       const masterKey = CryptoJS.lib.WordArray.random(32); // 256 bits
 
       // Deriver public/private simulés à partir du masterKey (pour le prototype)
-      const publicKey = CryptoJS.SHA256(masterKey.toString() + ':pub').toString();
-      const privateKey = CryptoJS.SHA256(masterKey.toString() + ':priv').toString();
+      const publicKey = CryptoJS.SHA256(
+        masterKey.toString() + ':pub',
+      ).toString();
+      const privateKey = CryptoJS.SHA256(
+        masterKey.toString() + ':priv',
+      ).toString();
 
       this.userKeyPair = {
         publicKey,
         privateKey,
-        masterKey: masterKey.toString()
+        masterKey: masterKey.toString(),
       };
 
       // Générer et stocker la paire sodium pour E2E réelle
@@ -122,7 +137,7 @@ class E2EEncryptionService {
 
       // Sauvegarder les clés de façon sécurisée
       await this.saveUserKeys();
-      
+
       console.log('Nouvelle paire de clés générée');
     } catch (error) {
       console.error('Erreur génération clés:', error);
@@ -146,7 +161,10 @@ class E2EEncryptionService {
           return;
         }
       } catch (kcErr) {
-        console.warn('Keychain non disponible ou lecture échouée, fallback AsyncStorage', kcErr);
+        console.warn(
+          'Keychain non disponible ou lecture échouée, fallback AsyncStorage',
+          kcErr,
+        );
       }
 
       // Fallback: AsyncStorage
@@ -169,16 +187,28 @@ class E2EEncryptionService {
     try {
       // Essayer d'écrire dans Keychain (préféré)
       try {
-        const toSave = { ...this.userKeyPair, sodiumKeyPair: this.sodiumKeyPair };
+        const toSave = {
+          ...this.userKeyPair,
+          sodiumKeyPair: this.sodiumKeyPair,
+        };
         await Keychain.setGenericPassword('axiom', JSON.stringify(toSave));
         return;
       } catch (kcErr) {
-        console.warn('Impossible d\'écrire dans Keychain, fallback vers AsyncStorage', kcErr);
+        console.warn(
+          "Impossible d'écrire dans Keychain, fallback vers AsyncStorage",
+          kcErr,
+        );
       }
 
       // Fallback: AsyncStorage (moins sécurisé)
-      const toSaveFallback = { ...this.userKeyPair, sodiumKeyPair: this.sodiumKeyPair };
-      await AsyncStorage.setItem('@axiom_user_keys', JSON.stringify(toSaveFallback));
+      const toSaveFallback = {
+        ...this.userKeyPair,
+        sodiumKeyPair: this.sodiumKeyPair,
+      };
+      await AsyncStorage.setItem(
+        '@axiom_user_keys',
+        JSON.stringify(toSaveFallback),
+      );
     } catch (error) {
       console.error('Erreur sauvegarde clés:', error);
       throw error;
@@ -222,19 +252,22 @@ class E2EEncryptionService {
         throw new Error('Sodium keypair not initialized');
       }
       const contactPubB64 = this.contactPublicKeysSodium.get(contactId);
-      if (!contactPubB64) throw new Error('Contact sodium public key not found');
+      if (!contactPubB64)
+        throw new Error('Contact sodium public key not found');
 
       const nonce = nacl.randomBytes(nacl.box.nonceLength);
       const msgUint8 = naclUtil.decodeUTF8(message);
       const contactPub = naclUtil.decodeBase64(contactPubB64);
-      const secretKey = naclUtil.decodeBase64(this.sodiumKeyPair.secretKey as string);
+      const secretKey = naclUtil.decodeBase64(
+        this.sodiumKeyPair.secretKey as string,
+      );
 
       const boxed = nacl.box(msgUint8, nonce, contactPub, secretKey);
 
       const payload = {
         cipher: naclUtil.encodeBase64(boxed),
         nonce: naclUtil.encodeBase64(nonce),
-        version: 'sodium-1'
+        version: 'sodium-1',
       };
       return JSON.stringify(payload);
     } catch (error) {
@@ -243,7 +276,10 @@ class E2EEncryptionService {
     }
   }
 
-  decryptMessageSodium(encryptedPayload: string, senderId: string): string | null {
+  decryptMessageSodium(
+    encryptedPayload: string,
+    senderId: string,
+  ): string | null {
     try {
       if (!this.sodiumKeyPair.publicKey || !this.sodiumKeyPair.secretKey) {
         throw new Error('Sodium keypair not initialized');
@@ -255,7 +291,9 @@ class E2EEncryptionService {
       const cipher = naclUtil.decodeBase64(payload.cipher);
       const nonce = naclUtil.decodeBase64(payload.nonce);
       const senderPub = naclUtil.decodeBase64(senderPubB64);
-      const secretKey = naclUtil.decodeBase64(this.sodiumKeyPair.secretKey as string);
+      const secretKey = naclUtil.decodeBase64(
+        this.sodiumKeyPair.secretKey as string,
+      );
 
       const opened = nacl.box.open(cipher, nonce, senderPub, secretKey);
       if (!opened) throw new Error('Failed to open box');
@@ -301,7 +339,10 @@ class E2EEncryptionService {
   encryptMessage(message: string, contactId: string): string | null {
     try {
       // Sodium priority
-      if (this.sodiumKeyPair.publicKey && this.contactPublicKeysSodium.has(contactId)) {
+      if (
+        this.sodiumKeyPair.publicKey &&
+        this.contactPublicKeysSodium.has(contactId)
+      ) {
         return this.encryptMessageSodium(message, contactId);
       }
 
@@ -320,16 +361,22 @@ class E2EEncryptionService {
 
       // Chiffrer le message avec la clé de session (AES-CBC + PKCS7 via CryptoJS)
       const iv = CryptoJS.lib.WordArray.random(16);
-      const encryptedMessage = CryptoJS.AES.encrypt(message, sessionKey, { iv }).toString();
+      const encryptedMessage = CryptoJS.AES.encrypt(message, sessionKey, {
+        iv,
+      }).toString();
 
       // Pour simuler le chiffrement asymétrique, on dérive une clé à partir
       // de la clé publique du contact et on chiffre la sessionKey avec AES.
       const derivedKey = CryptoJS.PBKDF2(contactPublicKey, 'axiom-salt', {
-        keySize: 256/32,
-        iterations: 10000 // augmenter les itérations pour plus de résistance
+        keySize: 256 / 32,
+        iterations: 10000, // augmenter les itérations pour plus de résistance
       });
       // Chiffrer la sessionKey (hex) avec la derivedKey en réutilisant l'IV
-      const encryptedSessionKey = CryptoJS.AES.encrypt(sessionKey.toString(CryptoJS.enc.Hex), derivedKey, { iv }).toString();
+      const encryptedSessionKey = CryptoJS.AES.encrypt(
+        sessionKey.toString(CryptoJS.enc.Hex),
+        derivedKey,
+        { iv },
+      ).toString();
 
       // Stocker l'IV séparément pour déchiffrement
       const ivB64 = iv.toString(CryptoJS.enc.Base64);
@@ -340,7 +387,7 @@ class E2EEncryptionService {
         sessionKey: encryptedSessionKey,
         iv: ivB64,
         timestamp: Date.now(),
-        version: '1.0'
+        version: '1.0',
       };
 
       return JSON.stringify(encryptedPayload);
@@ -358,7 +405,10 @@ class E2EEncryptionService {
       const payload = JSON.parse(encryptedPayload);
 
       // Si on a une paire sodium et la clé sodium du sender, utiliser sodium
-      if (this.sodiumKeyPair.publicKey && this.contactPublicKeysSodium.has(_senderId)) {
+      if (
+        this.sodiumKeyPair.publicKey &&
+        this.contactPublicKeysSodium.has(_senderId)
+      ) {
         return this.decryptMessageSodium(encryptedPayload, _senderId);
       }
 
@@ -367,21 +417,35 @@ class E2EEncryptionService {
       }
 
       // Déchiffrer la clé de session avec notre clé privée (flow CryptoJS)
-      const derivedKey = CryptoJS.PBKDF2(this.userKeyPair.publicKey, 'axiom-salt', {
-        keySize: 256/32,
-        iterations: 10000
-      });
+      const derivedKey = CryptoJS.PBKDF2(
+        this.userKeyPair.publicKey,
+        'axiom-salt',
+        {
+          keySize: 256 / 32,
+          iterations: 10000,
+        },
+      );
 
       // Récupérer l'IV et le parser depuis Base64
-      const ivWord = payload.iv ? CryptoJS.enc.Base64.parse(payload.iv) : CryptoJS.lib.WordArray.create();
+      const ivWord = payload.iv
+        ? CryptoJS.enc.Base64.parse(payload.iv)
+        : CryptoJS.lib.WordArray.create();
 
       // Déchiffrer la sessionKey avec la derivedKey et l'IV
-      const sessionKeyBytes = CryptoJS.AES.decrypt(payload.sessionKey, derivedKey, { iv: ivWord });
+      const sessionKeyBytes = CryptoJS.AES.decrypt(
+        payload.sessionKey,
+        derivedKey,
+        { iv: ivWord },
+      );
       const sessionKeyHex = sessionKeyBytes.toString(CryptoJS.enc.Utf8);
       const sessionKeyWord = CryptoJS.enc.Hex.parse(sessionKeyHex);
 
       // Déchiffrer le message avec la clé de session et l'IV
-      const messageBytes = CryptoJS.AES.decrypt(payload.message, sessionKeyWord, { iv: ivWord });
+      const messageBytes = CryptoJS.AES.decrypt(
+        payload.message,
+        sessionKeyWord,
+        { iv: ivWord },
+      );
       const decryptedMessage = messageBytes.toString(CryptoJS.enc.Utf8);
 
       if (!decryptedMessage) {
@@ -408,26 +472,37 @@ class E2EEncryptionService {
   encryptFile(fileBase64: string, contactId: string): string | null {
     try {
       // Sodium priority
-      if (this.sodiumKeyPair.publicKey && this.contactPublicKeysSodium.has(contactId)) {
+      if (
+        this.sodiumKeyPair.publicKey &&
+        this.contactPublicKeysSodium.has(contactId)
+      ) {
         return this.encryptFileSodium(fileBase64, contactId);
       }
 
-      if (!this.userKeyPair) throw new Error('Clés utilisateur non initialisées');
+      if (!this.userKeyPair)
+        throw new Error('Clés utilisateur non initialisées');
 
       const contactPublicKey = this.contactKeys.get(contactId);
-      if (!contactPublicKey) throw new Error(`Clé publique du contact ${contactId} non trouvée`);
+      if (!contactPublicKey)
+        throw new Error(`Clé publique du contact ${contactId} non trouvée`);
 
       const sessionKey = CryptoJS.lib.WordArray.random(32);
       const iv = CryptoJS.lib.WordArray.random(16);
 
       // Chiffrer le contenu base64 (traité comme chaîne)
-      const encryptedFile = CryptoJS.AES.encrypt(fileBase64, sessionKey, { iv }).toString();
+      const encryptedFile = CryptoJS.AES.encrypt(fileBase64, sessionKey, {
+        iv,
+      }).toString();
 
       const derivedKey = CryptoJS.PBKDF2(contactPublicKey, 'axiom-salt', {
-        keySize: 256/32,
-        iterations: 10000
+        keySize: 256 / 32,
+        iterations: 10000,
       });
-      const encryptedSessionKey = CryptoJS.AES.encrypt(sessionKey.toString(CryptoJS.enc.Hex), derivedKey, { iv }).toString();
+      const encryptedSessionKey = CryptoJS.AES.encrypt(
+        sessionKey.toString(CryptoJS.enc.Hex),
+        derivedKey,
+        { iv },
+      ).toString();
       const ivB64 = iv.toString(CryptoJS.enc.Base64);
 
       const payload = {
@@ -435,7 +510,7 @@ class E2EEncryptionService {
         sessionKey: encryptedSessionKey,
         iv: ivB64,
         timestamp: Date.now(),
-        version: '1.0'
+        version: '1.0',
       };
 
       return JSON.stringify(payload);
@@ -451,28 +526,45 @@ class E2EEncryptionService {
   decryptFile(encryptedPayload: string, _senderId: string): string | null {
     try {
       // Sodium priority
-      if (this.sodiumKeyPair.publicKey && this.contactPublicKeysSodium.has(_senderId)) {
+      if (
+        this.sodiumKeyPair.publicKey &&
+        this.contactPublicKeysSodium.has(_senderId)
+      ) {
         return this.decryptFileSodium(encryptedPayload, _senderId);
       }
 
-      if (!this.userKeyPair) throw new Error('Clés utilisateur non initialisées');
+      if (!this.userKeyPair)
+        throw new Error('Clés utilisateur non initialisées');
 
       const payload = JSON.parse(encryptedPayload);
 
-      const derivedKey = CryptoJS.PBKDF2(this.userKeyPair.publicKey, 'axiom-salt', {
-        keySize: 256/32,
-        iterations: 10000
-      });
+      const derivedKey = CryptoJS.PBKDF2(
+        this.userKeyPair.publicKey,
+        'axiom-salt',
+        {
+          keySize: 256 / 32,
+          iterations: 10000,
+        },
+      );
 
-      const ivWord = payload.iv ? CryptoJS.enc.Base64.parse(payload.iv) : CryptoJS.lib.WordArray.create();
-      const sessionKeyBytes = CryptoJS.AES.decrypt(payload.sessionKey, derivedKey, { iv: ivWord });
+      const ivWord = payload.iv
+        ? CryptoJS.enc.Base64.parse(payload.iv)
+        : CryptoJS.lib.WordArray.create();
+      const sessionKeyBytes = CryptoJS.AES.decrypt(
+        payload.sessionKey,
+        derivedKey,
+        { iv: ivWord },
+      );
       const sessionKeyHex = sessionKeyBytes.toString(CryptoJS.enc.Utf8);
       const sessionKeyWord = CryptoJS.enc.Hex.parse(sessionKeyHex);
 
-      const fileBytes = CryptoJS.AES.decrypt(payload.file, sessionKeyWord, { iv: ivWord });
+      const fileBytes = CryptoJS.AES.decrypt(payload.file, sessionKeyWord, {
+        iv: ivWord,
+      });
       const fileBase64 = fileBytes.toString(CryptoJS.enc.Utf8);
 
-      if (!fileBase64) throw new Error('Échec du déchiffrement du fichier - clé invalide');
+      if (!fileBase64)
+        throw new Error('Échec du déchiffrement du fichier - clé invalide');
 
       return fileBase64;
     } catch (error) {
@@ -492,9 +584,14 @@ class E2EEncryptionService {
 
     const combined = this.userKeyPair.publicKey + contactKey;
     const fingerprint = CryptoJS.SHA256(combined).toString().substring(0, 32);
-    
+
     // Formater le fingerprint en groupes de 4 caractères
-    return fingerprint.match(/.{1,4}/g)?.join(' ').toUpperCase() || null;
+    return (
+      fingerprint
+        .match(/.{1,4}/g)
+        ?.join(' ')
+        .toUpperCase() || null
+    );
   }
 
   /**
@@ -505,7 +602,7 @@ class E2EEncryptionService {
       await AsyncStorage.removeItem('@axiom_user_keys');
       this.userKeyPair = null;
       this.contactKeys.clear();
-      
+
       await this.generateUserKeyPair();
       console.log('Clés réinitialisées avec succès');
     } catch (error) {
