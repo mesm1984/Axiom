@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,26 @@ const FloatingNotification: React.FC<FloatingNotificationProps> = ({
   const [shouldRender, setShouldRender] = useState(isVisible);
 
   useEffect(() => {
+    const hideNotification = () => {
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: -100,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShouldRender(false);
+        if (onDismiss) {
+          onDismiss();
+        }
+      });
+    };
+
     if (isVisible) {
       setShouldRender(true);
       // Animation d'entrée
@@ -52,9 +72,9 @@ const FloatingNotification: React.FC<FloatingNotificationProps> = ({
     } else {
       hideNotification();
     }
-  }, [isVisible, duration, translateY, opacity]);
+  }, [isVisible, duration, translateY, opacity, onDismiss]);
 
-  const hideNotification = () => {
+  const hideNotificationExternal = () => {
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: -100,
@@ -78,7 +98,7 @@ const FloatingNotification: React.FC<FloatingNotificationProps> = ({
     if (onPress) {
       onPress();
     }
-    hideNotification();
+    hideNotificationExternal();
   };
 
   if (!isVisible && shouldRender === false) {
@@ -111,7 +131,7 @@ const FloatingNotification: React.FC<FloatingNotificationProps> = ({
         </View>
         <TouchableOpacity
           style={styles.dismissButton}
-          onPress={hideNotification}
+          onPress={hideNotificationExternal}
         >
           <Text style={styles.dismissText}>×</Text>
         </TouchableOpacity>

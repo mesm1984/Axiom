@@ -99,6 +99,9 @@ const PulseButton: React.FC<PulseButtonProps> = ({
     }
   };
 
+  const buttonBackgroundColor = disabled ? '#ccc' : pulseColor;
+  const textColor = disabled ? '#888' : '#fff';
+
   return (
     <TouchableOpacity
       style={[styles.container, style]}
@@ -112,7 +115,7 @@ const PulseButton: React.FC<PulseButtonProps> = ({
         style={[
           styles.button,
           {
-            backgroundColor: disabled ? '#ccc' : pulseColor,
+            backgroundColor: buttonBackgroundColor,
             transform: [{ scale: scaleAnim }],
             opacity: opacityAnim,
           },
@@ -129,13 +132,7 @@ const PulseButton: React.FC<PulseButtonProps> = ({
             ]}
           />
         )}
-        <Text
-          style={[
-            styles.text,
-            { color: disabled ? '#888' : '#fff' },
-            textStyle,
-          ]}
-        >
+        <Text style={[styles.text, { color: textColor }, textStyle]}>
           {title}
         </Text>
       </Animated.View>
