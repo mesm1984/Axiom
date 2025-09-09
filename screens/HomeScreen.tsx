@@ -200,11 +200,11 @@ const HomeScreen = () => {
 
   // Ces fonctions sont définies mais actuellement non utilisées.
   // Elles sont préparées pour une fonctionnalité future
-  /* 
+  /*
   // Fonction pour marquer un message comme lu ou non lu
   const toggleUnread = (id: string) => {
-    setConversationsList(current => 
-      current.map(conv => 
+    setConversationsList(current =>
+      current.map(conv =>
         conv.id === id ? { ...conv, unread: !conv.unread } : conv
       )
     );
@@ -212,8 +212,8 @@ const HomeScreen = () => {
 
   // Fonction pour archiver une conversation
   const archiveConversation = (id: string) => {
-    setConversationsList(current => 
-      current.map(conv => 
+    setConversationsList(current =>
+      current.map(conv =>
         conv.id === id ? { ...conv, archived: true } : conv
       )
     );
@@ -369,7 +369,10 @@ const HomeScreen = () => {
         <PulseButton
           title="📊"
           onPress={() => navigation.navigate('Storage')}
-          style={[styles.floatingButton, styles.storageButton]}
+          style={{
+            ...styles.floatingButton,
+            ...styles.storageButton,
+          }}
           textStyle={styles.floatingButtonText}
           pulseColor="#AF52DE"
         />
