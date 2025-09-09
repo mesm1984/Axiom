@@ -8,7 +8,7 @@ import {
 
 interface AnimatedButtonProps extends TouchableOpacityProps {
   children: any;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
   pressInScale?: number;
   pressOutScale?: number;
   duration?: number;

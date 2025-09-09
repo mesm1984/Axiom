@@ -11,6 +11,9 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import PulseButton from '../components/PulseButton';
+import PageTransition from '../components/PageTransition';
+import BottomTabBar from '../components/BottomTabBar';
 
 // Type pour les conversations
 type Conversation = {
@@ -231,7 +234,9 @@ const HomeScreen = () => {
 
   const renderConversationItem = ({ item }: { item: Conversation }) => {
     // Ne pas afficher les conversations archivées
-    if (item.archived) return null;
+    if (item.archived) {
+      return null;
+    }
 
     return (
       <TouchableOpacity
@@ -308,61 +313,69 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={conversationsList}
-        renderItem={renderConversationItem}
-        keyExtractor={item => item.id}
-        style={styles.conversationsList}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#0084FF']}
+    <PageTransition visible={true} type="fade" duration={400}>
+      <View style={styles.container}>
+        <FlatList
+          data={conversationsList}
+          renderItem={renderConversationItem}
+          keyExtractor={item => item.id}
+          style={styles.conversationsList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#0084FF']}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Aucune conversation</Text>
+              <Text style={styles.emptySubText}>
+                Commencez à discuter en appuyant sur "Nouvelle conversation"
+              </Text>
+            </View>
+          }
+        />
+
+        <View style={styles.actionsContainer}>
+          <PulseButton
+            title="+ Nouvelle conversation"
+            onPress={() => navigation.navigate('Conversation')}
+            style={styles.newConversationButton}
+            textStyle={styles.actionButtonText}
+            pulseColor="#007AFF"
+            rippleEffect={true}
           />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Aucune conversation</Text>
-            <Text style={styles.emptySubText}>
-              Commencez à discuter en appuyant sur "Nouvelle conversation"
-            </Text>
-          </View>
-        }
-      />
 
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.newConversationButton]}
-          onPress={() => navigation.navigate('Conversation')}
-        >
-          <Text style={styles.actionButtonText}>+ Nouvelle conversation</Text>
-        </TouchableOpacity>
+          <PulseButton
+            title="⚙️ Paramètres"
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.settingsButton}
+            textStyle={styles.actionButtonText}
+            pulseColor="#34C759"
+          />
+        </View>
 
-        <TouchableOpacity
-          style={[styles.actionButton, styles.settingsButton]}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <Text style={styles.actionButtonText}>⚙️ Paramètres</Text>
-        </TouchableOpacity>
+        {/* Menu flottant pour d'autres actions */}
+        <PulseButton
+          title="📁"
+          onPress={() => navigation.navigate('FileTransfer')}
+          style={styles.floatingButton}
+          textStyle={styles.floatingButtonText}
+          pulseColor="#FF9500"
+        />
+
+        {/* Bouton pour la gestion du stockage */}
+        <PulseButton
+          title="📊"
+          onPress={() => navigation.navigate('Storage')}
+          style={[styles.floatingButton, styles.storageButton]}
+          textStyle={styles.floatingButtonText}
+          pulseColor="#AF52DE"
+        />
       </View>
-
-      {/* Menu flottant pour d'autres actions */}
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => navigation.navigate('FileTransfer')}
-      >
-        <Text style={styles.floatingButtonText}>📁</Text>
-      </TouchableOpacity>
-
-      {/* Bouton pour la gestion du stockage */}
-      <TouchableOpacity
-        style={[styles.floatingButton, styles.storageButton]}
-        onPress={() => navigation.navigate('Storage')}
-      >
-        <Text style={styles.floatingButtonText}>📊</Text>
-      </TouchableOpacity>
-    </View>
+      <BottomTabBar currentRoute="Home" />
+    </PageTransition>
   );
 };
 

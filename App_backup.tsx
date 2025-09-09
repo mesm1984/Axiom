@@ -30,64 +30,31 @@ const App = () => {
   try {
     return (
       <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{
-            animation: 'slide_from_right',
-            animationDuration: 250,
-            headerShown: true,
-            headerStyle: {
-              backgroundColor: '#007AFF',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: '600',
-            },
-          }}
-        >
+        <Stack.Navigator initialRouteName="Home">
           <Stack.Screen
             name="Home"
             component={HomeScreen}
-            options={{
-              title: 'Accueil',
-              headerStyle: {
-                backgroundColor: '#007AFF',
-              },
-              animation: 'fade',
-            }}
+            options={{ title: 'Accueil' }}
           />
           <Stack.Screen
             name="Conversation"
             component={ConversationScreen}
-            options={{
-              title: 'Conversation',
-              animation: 'slide_from_right',
-              animationDuration: 300,
-            }}
+            options={{ title: 'Conversation' }}
           />
           <Stack.Screen
             name="FileTransfer"
             component={FileTransferScreen}
-            options={{
-              title: 'Transfert de fichiers',
-              animation: 'slide_from_bottom',
-            }}
+            options={{ title: 'Transfert de fichiers' }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={{
-              title: 'Paramètres',
-              animation: 'slide_from_right',
-            }}
+            options={{ title: 'Paramètres' }}
           />
           <Stack.Screen
             name="Storage"
             component={StorageScreen}
-            options={{
-              title: 'Stockage',
-              animation: 'slide_from_bottom',
-            }}
+            options={{ title: 'Stockage' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

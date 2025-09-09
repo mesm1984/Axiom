@@ -1779,6 +1779,8 @@ Axiom est conçu pour être une solution complète, alliant une technologie de p
 
 ### 12.4 Planning prévisionnel révisé
 - **Phase 1 (1-2 mois)** : Finalisation des fonctionnalités de base et de l'interface utilisateur
-- **Phase 3 (1- 
- - - -  
+- **Phase 3 (1-
+ 
+ - - - 
+ 
  

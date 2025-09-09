@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -9,12 +9,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import E2EEncryptionService from '../services/E2EEncryptionService';
 import MessageBubble from '../components/MessageBubble';
 import InputBar from '../components/InputBar';
 import ConversationHeader from '../components/ConversationHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
+import TypingIndicator from '../components/TypingIndicator';
+import ConnectionStatus from '../components/ConnectionStatus';
 import {
   encryptMessage,
   decryptMessage,
@@ -136,6 +140,13 @@ const ConversationScreen = () => {
   );
   const [fingerprint, setFingerprint] = useState<string>('');
 
+  // Nouveaux états pour les améliorations UI
+  const [isTyping, setIsTyping] = useState(false);
+  const [showTypingIndicator, setShowTypingIndicator] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  const flatListRef = useRef<FlatList>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (isE2EReady && contactId && encryptionService) {
       const fp = encryptionService.generateSecurityFingerprint(contactId);
@@ -146,6 +157,13 @@ const ConversationScreen = () => {
   useEffect(() => {
     // Test du flux crypto après chaque envoi
     testCryptoFlow(contactId, messages);
+
+    // Scroll automatique vers le bas quand un nouveau message arrive
+    if (messages.length > 0 && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
   }, [messages, contactId]);
 
   const initializeEncryption = async () => {
@@ -166,6 +184,19 @@ const ConversationScreen = () => {
       loadDemoMessages();
     };
     init();
+
+    // Simulation de changements de statut de connexion
+    const connectionSimulation = setInterval(() => {
+      // Simuler occasionnellement une déconnexion temporaire
+      if (Math.random() < 0.1) {
+        setIsConnected(false);
+        setTimeout(() => {
+          setIsConnected(true);
+        }, 2000 + Math.random() * 3000);
+      }
+    }, 15000); // Vérifier toutes les 15 secondes
+
+    return () => clearInterval(connectionSimulation);
   }, []);
 
   const loadDemoMessages = () => {
@@ -186,6 +217,57 @@ const ConversationScreen = () => {
       },
     ];
     setMessages(demoMessages);
+  };
+
+  // Fonctions pour l'indicateur de frappe
+  const handleInputChange = (text: string) => {
+    setNewMessage(text);
+
+    // Simuler l'indicateur de frappe du contact après que l'utilisateur commence à taper
+    if (text.length > 0 && !isTyping) {
+      setIsTyping(true);
+
+      // Nettoyer le timeout précédent
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Simuler que le contact commence à taper après 1 seconde
+      typingTimeoutRef.current = setTimeout(() => {
+        setShowTypingIndicator(true);
+
+        // Le contact arrête de taper après 3 secondes
+        typingTimeoutRef.current = setTimeout(() => {
+          setShowTypingIndicator(false);
+          setIsTyping(false);
+        }, 3000);
+      }, 1000);
+    }
+  };
+
+  // Simuler une réponse automatique du contact
+  const simulateContactResponse = () => {
+    const responses = [
+      'Message reçu et déchiffré avec succès! 🔒',
+      'Communication sécurisée établie ✅',
+      'Parfait, le chiffrement E2E fonctionne!',
+      'Message authentifié et vérifié 🛡️',
+      'Excellent! La sécurité est garantie.',
+    ];
+
+    const randomResponse =
+      responses[Math.floor(Math.random() * responses.length)];
+
+    setTimeout(() => {
+      const contactMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: randomResponse,
+        sender: 'contact',
+        timestamp: Date.now(),
+        isEncrypted: true,
+      };
+      setMessages(prev => [...prev, contactMessage]);
+    }, 2000 + Math.random() * 3000); // Réponse entre 2-5 secondes
   };
 
   const sendMessage = async () => {
@@ -248,6 +330,15 @@ const ConversationScreen = () => {
       };
       setMessages(prev => [...prev, message]);
       setNewMessage('');
+
+      // Arrêter l'indicateur de frappe et simuler une réponse
+      setShowTypingIndicator(false);
+      setIsTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      simulateContactResponse();
+
       console.log('Message chiffré envoyé:', encrypted);
       console.log('Message déchiffré:', decrypted);
     } catch (error) {
@@ -301,7 +392,14 @@ const ConversationScreen = () => {
         onRotateKeys={handleRotateKeys}
       />
 
+      <ConnectionStatus
+        isConnected={isConnected}
+        isE2EReady={isE2EReady}
+        lastSeen={new Date(Date.now() - 300000)}
+      />
+
       <FlatList
+        ref={flatListRef}
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item: Message) => item.id}
@@ -324,11 +422,17 @@ const ConversationScreen = () => {
             </View>
           )
         }
+        ListFooterComponent={() => (
+          <TypingIndicator
+            isVisible={showTypingIndicator}
+            contactName="Contact"
+          />
+        )}
       />
 
       <InputBar
         message={newMessage}
-        onChangeText={setNewMessage}
+        onChangeText={handleInputChange}
         onSend={sendMessage}
         isE2EReady={isE2EReady}
         placeholder={isE2EReady ? 'Message sécurisé...' : 'Initialisation...'}
