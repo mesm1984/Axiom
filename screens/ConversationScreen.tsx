@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -9,8 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Animated,
-  Dimensions,
 } from 'react-native';
 import E2EEncryptionService from '../services/E2EEncryptionService';
 import MessageBubble from '../components/MessageBubble';
@@ -82,6 +80,25 @@ const ContactSelector: React.FC<ContactSelectorProps> = ({
   </View>
 );
 
+// Composants extraits pour éviter la re-création à chaque rendu
+const EmptyComponent: React.FC<{ isE2EReady: boolean }> = ({ isE2EReady }) =>
+  !isE2EReady ? (
+    <LoadingSpinner text="Initialisation du chiffrement..." visible={true} />
+  ) : (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>🔒 Conversation sécurisée prête</Text>
+      <Text style={styles.emptySubtext}>
+        Vos messages sont chiffrés bout en bout
+      </Text>
+    </View>
+  );
+
+const FooterComponent: React.FC<{
+  showTypingIndicator: boolean;
+  contactName: string;
+}> = ({ showTypingIndicator, contactName }) => (
+  <TypingIndicator isVisible={showTypingIndicator} contactName={contactName} />
+);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -166,19 +183,45 @@ const ConversationScreen = () => {
     }
   }, [messages, contactId]);
 
-  const initializeEncryption = async () => {
-    try {
-      await encryptionService.initialize();
-      encryptionService.addContactKey(contactId, 'demo-public-key-contact-123');
-      setIsE2EReady(true);
-      console.log('Chiffrement E2E initialisé');
-    } catch (error) {
-      Alert.alert('Erreur', "Impossible d'initialiser le chiffrement sécurisé");
-      console.error('Erreur init E2E:', error);
-    }
-  };
-
   useEffect(() => {
+    const initializeEncryption = async () => {
+      try {
+        await encryptionService.initialize();
+        encryptionService.addContactKey(
+          contactId,
+          'demo-public-key-contact-123',
+        );
+        setIsE2EReady(true);
+        console.log('Chiffrement E2E initialisé');
+      } catch (error) {
+        Alert.alert(
+          'Erreur',
+          "Impossible d'initialiser le chiffrement sécurisé",
+        );
+        console.error('Erreur init E2E:', error);
+      }
+    };
+
+    const loadDemoMessages = () => {
+      const demoMessages: Message[] = [
+        {
+          id: '1',
+          text: 'Salut ! Comment ça va ?',
+          sender: 'contact',
+          timestamp: Date.now() - 300000,
+          isEncrypted: true,
+        },
+        {
+          id: '2',
+          text: 'Ça va bien, merci ! Et toi ?',
+          sender: 'user',
+          timestamp: Date.now() - 240000,
+          isEncrypted: true,
+        },
+      ];
+      setMessages(demoMessages);
+    };
+
     const init = async () => {
       await initializeEncryption();
       loadDemoMessages();
@@ -197,27 +240,7 @@ const ConversationScreen = () => {
     }, 15000); // Vérifier toutes les 15 secondes
 
     return () => clearInterval(connectionSimulation);
-  }, []);
-
-  const loadDemoMessages = () => {
-    const demoMessages: Message[] = [
-      {
-        id: '1',
-        text: 'Salut ! Comment ça va ?',
-        sender: 'contact',
-        timestamp: Date.now() - 300000,
-        isEncrypted: true,
-      },
-      {
-        id: '2',
-        text: 'Ça va bien, merci ! Et toi ?',
-        sender: 'user',
-        timestamp: Date.now() - 240000,
-        isEncrypted: true,
-      },
-    ];
-    setMessages(demoMessages);
-  };
+  }, [encryptionService, contactId]);
 
   // Fonctions pour l'indicateur de frappe
   const handleInputChange = (text: string) => {
@@ -377,6 +400,22 @@ const ConversationScreen = () => {
     setIsE2EReady(true);
   };
 
+  // Mémorisation des composants pour éviter la re-création
+  const emptyComponent = useMemo(
+    () => <EmptyComponent isE2EReady={isE2EReady} />,
+    [isE2EReady],
+  );
+
+  const footerComponent = useMemo(
+    () => (
+      <FooterComponent
+        showTypingIndicator={showTypingIndicator}
+        contactName="Contact"
+      />
+    ),
+    [showTypingIndicator],
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -405,29 +444,8 @@ const ConversationScreen = () => {
         keyExtractor={(item: Message) => item.id}
         style={styles.messagesList}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={() =>
-          !isE2EReady ? (
-            <LoadingSpinner
-              text="Initialisation du chiffrement..."
-              visible={true}
-            />
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                🔒 Conversation sécurisée prête
-              </Text>
-              <Text style={styles.emptySubtext}>
-                Vos messages sont chiffrés bout en bout
-              </Text>
-            </View>
-          )
-        }
-        ListFooterComponent={() => (
-          <TypingIndicator
-            isVisible={showTypingIndicator}
-            contactName="Contact"
-          />
-        )}
+        ListEmptyComponent={() => emptyComponent}
+        ListFooterComponent={() => footerComponent}
       />
 
       <InputBar
