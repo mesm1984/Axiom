@@ -376,6 +376,18 @@ const HomeScreen = () => {
           textStyle={styles.floatingButtonText}
           pulseColor="#AF52DE"
         />
+
+        {/* Bouton pour les services avancés */}
+        <PulseButton
+          title="⚡"
+          onPress={() => navigation.navigate('AdvancedServices')}
+          style={{
+            ...styles.floatingButton,
+            ...styles.advancedServicesButton,
+          }}
+          textStyle={styles.floatingButtonText}
+          pulseColor="#FF2D92"
+        />
       </View>
       <BottomTabBar currentRoute="Home" />
     </PageTransition>
@@ -622,6 +634,10 @@ const styles = StyleSheet.create({
   storageButton: {
     bottom: 170,
     backgroundColor: '#4CAF50',
+  },
+  advancedServicesButton: {
+    bottom: 240,
+    backgroundColor: '#FF2D92',
   },
   floatingButtonText: {
     fontSize: 24,

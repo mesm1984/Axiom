@@ -11,7 +11,7 @@ import {
 interface PulseButtonProps {
   onPress: () => void;
   title: string;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
   textStyle?: TextStyle;
   disabled?: boolean;
   pulseColor?: string;

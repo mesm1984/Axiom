@@ -1,12 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../App';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
 const HomeScreenSimple = (): React.JSX.Element => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const handlePress = (feature: string) => {
+    Alert.alert('Navigation', `Vous êtes dans la section ${feature}`);
+  };
 
   return (
     <View style={styles.container}>
@@ -16,14 +14,14 @@ const HomeScreenSimple = (): React.JSX.Element => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Conversation')}
+          onPress={() => handlePress('Conversations')}
         >
           <Text style={styles.buttonText}>💬 Nouvelle conversation</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Settings')}
+          onPress={() => handlePress('Paramètres')}
         >
           <Text style={styles.buttonText}>⚙️ Paramètres</Text>
         </TouchableOpacity>

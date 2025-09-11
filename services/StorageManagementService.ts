@@ -136,7 +136,9 @@ class StorageManagementService {
   async getAllFiles(): Promise<FileInfo[]> {
     try {
       const storedData = await AsyncStorage.getItem(this.STORAGE_KEY);
-      if (!storedData) return [];
+      if (!storedData) {
+        return [];
+      }
 
       const files: FileInfo[] = JSON.parse(storedData).map((file: any) => ({
         ...file,
@@ -331,7 +333,9 @@ class StorageManagementService {
 
   // Formatage utilitaire
   static formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) {
+      return '0 B';
+    }
 
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -341,16 +345,23 @@ class StorageManagementService {
   }
 
   static getFileTypeFromMimeType(mimeType: string): FileInfo['type'] {
-    if (mimeType.startsWith('image/')) return 'image';
-    if (mimeType.startsWith('video/')) return 'video';
-    if (mimeType.startsWith('audio/')) return 'audio';
+    if (mimeType.startsWith('image/')) {
+      return 'image';
+    }
+    if (mimeType.startsWith('video/')) {
+      return 'video';
+    }
+    if (mimeType.startsWith('audio/')) {
+      return 'audio';
+    }
     if (
       mimeType.startsWith('application/pdf') ||
       mimeType.startsWith('application/msword') ||
       mimeType.startsWith('application/vnd.openxmlformats') ||
       mimeType.startsWith('text/')
-    )
+    ) {
       return 'document';
+    }
     return 'other';
   }
 }

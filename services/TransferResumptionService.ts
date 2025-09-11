@@ -246,7 +246,9 @@ class TransferResumptionService {
   ): Promise<boolean> {
     try {
       const session = this.activeSessions.get(sessionId);
-      if (!session) return false;
+      if (!session) {
+        return false;
+      }
 
       if (chunkIndex !== undefined) {
         // Erreur sur un chunk spécifique
@@ -278,7 +280,7 @@ class TransferResumptionService {
       await this.saveSession(session);
       return session.status !== 'failed';
     } catch (err) {
-      console.error(`Erreur lors de la gestion d'erreur:`, err);
+      console.error("Erreur lors de la gestion d'erreur:", err);
       return false;
     }
   }
@@ -308,7 +310,7 @@ class TransferResumptionService {
           await RNFS.unlink(session.targetPath);
         }
       } catch (error) {
-        console.warn(`Impossible de supprimer le fichier partiel:`, error);
+        console.warn('Impossible de supprimer le fichier partiel:', error);
       }
     }
   }
@@ -377,7 +379,9 @@ class TransferResumptionService {
     chunks: TransferChunk[],
   ): void {
     const callback = this.progressCallbacks.get(sessionId);
-    if (!callback) return;
+    if (!callback) {
+      return;
+    }
 
     const completedChunks = chunks.filter(c => c.isTransferred).length;
     const progress: TransferProgress = {
@@ -394,12 +398,12 @@ class TransferResumptionService {
     callback(progress);
   }
 
-  private calculateTransferSpeed(sessionId: string): number {
+  private calculateTransferSpeed(_sessionId: string): number {
     // Implémentation simplifiée - devrait calculer la vitesse basée sur l'historique
     return 0;
   }
 
-  private calculateETA(sessionId: string): number {
+  private calculateETA(_sessionId: string): number {
     // Implémentation simplifiée - devrait calculer le temps restant
     return 0;
   }
@@ -447,7 +451,9 @@ class TransferResumptionService {
   private async getAllSessions(): Promise<TransferSession[]> {
     try {
       const data = await AsyncStorage.getItem(this.SESSIONS_KEY);
-      if (!data) return [];
+      if (!data) {
+        return [];
+      }
 
       return JSON.parse(data).map((session: any) => ({
         ...session,

@@ -447,7 +447,9 @@ class SecurityService {
   private async getAllReports(): Promise<UserReporting[]> {
     try {
       const data = await AsyncStorage.getItem(this.REPORTS_KEY);
-      if (!data) return [];
+      if (!data) {
+        return [];
+      }
 
       return JSON.parse(data).map((report: any) => ({
         ...report,
@@ -470,7 +472,9 @@ class SecurityService {
   private async getAllAlerts(): Promise<SecurityAlert[]> {
     try {
       const data = await AsyncStorage.getItem(this.ALERTS_KEY);
-      if (!data) return [];
+      if (!data) {
+        return [];
+      }
 
       return JSON.parse(data).map((alert: any) => ({
         ...alert,
@@ -493,7 +497,9 @@ class SecurityService {
   private async getAllTrustScores(): Promise<UserTrustScore[]> {
     try {
       const data = await AsyncStorage.getItem(this.TRUST_SCORES_KEY);
-      if (!data) return [];
+      if (!data) {
+        return [];
+      }
 
       return JSON.parse(data).map((score: any) => ({
         ...score,
