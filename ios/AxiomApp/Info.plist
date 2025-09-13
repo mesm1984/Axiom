@@ -48,5 +48,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application nécessite l'accès à votre galerie photo pour partager des images.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application nécessite l'accès à votre caméra pour prendre des photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cette application nécessite l'accès au microphone pour enregistrer des vidéos.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Cette application nécessite l'accès à vos documents pour partager des fichiers.</string>
 </dict>
 </plist>
