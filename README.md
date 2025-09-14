@@ -1,3 +1,12 @@
+# AXIOM - Messagerie Sécurisée
+
+**⚠️ LOGICIEL PROPRIÉTAIRE - TOUS DROITS RÉSERVÉS**
+
+Cette application est la propriété exclusive de Marco.
+Aucune utilisation, modification ou distribution n'est autorisée sans permission écrite.
+
+---
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
