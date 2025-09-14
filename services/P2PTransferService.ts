@@ -75,7 +75,7 @@ const RTCPeerConnection = class {
     console.log('[P2P Mock] Connexion fermée');
   }
 } as any;
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAsyncStorage from '../utils/SafeAsyncStorage';
 import RNFS from 'react-native-fs';
 
 // Types pour la configuration et les événements
@@ -179,12 +179,12 @@ class P2PTransferService {
    */
   private async loadConfiguration(): Promise<void> {
     try {
-      const savedConfig = await AsyncStorage.getItem('p2p_config');
+      const savedConfig = await SafeAsyncStorage.getItem('p2p_config');
       if (savedConfig) {
         this.config = { ...this.config, ...JSON.parse(savedConfig) };
       }
 
-      const savedSTUNTURN = await AsyncStorage.getItem('stun_turn_config');
+      const savedSTUNTURN = await SafeAsyncStorage.getItem('stun_turn_config');
       if (savedSTUNTURN) {
         this.stunTurnConfig = { ...this.stunTurnConfig, ...JSON.parse(savedSTUNTURN) };
       }
@@ -198,8 +198,8 @@ class P2PTransferService {
    */
   private async saveConfiguration(): Promise<void> {
     try {
-      await AsyncStorage.setItem('p2p_config', JSON.stringify(this.config));
-      await AsyncStorage.setItem('stun_turn_config', JSON.stringify(this.stunTurnConfig));
+      await SafeAsyncStorage.setItem('p2p_config', JSON.stringify(this.config));
+      await SafeAsyncStorage.setItem('stun_turn_config', JSON.stringify(this.stunTurnConfig));
     } catch (error) {
       console.warn('[P2P] Erreur lors de la sauvegarde de la configuration:', error);
     }
@@ -798,3 +798,4 @@ class P2PTransferService {
 }
 
 export default P2PTransferService;
+

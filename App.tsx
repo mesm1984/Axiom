@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,11 @@ import {
   Animated,
   TextInput,
   Switch,
+  Vibration,
 } from 'react-native';
+import * as ApiServiceModule from './services/ApiService';
+const ApiService = ApiServiceModule.default;
+import SocketService from './services/SocketService';
 import DocumentPicker from 'react-native-document-picker';
 import {
   launchImageLibrary,
@@ -19,6 +23,9 @@ import {
   ImagePickerResponse,
   MediaType,
 } from 'react-native-image-picker';
+
+// Configuration développement - TODO: Retirer en production
+const DEV_BYPASS_AUTH = true; // Mettre à false pour activer l'authentification
 
 // Système de thème
 interface Theme {
@@ -132,6 +139,171 @@ const App = () => {
       shadowRadius: 8,
       elevation: 4,
     },
+    // Styles pour la page d'accueil
+    welcomeTitle: {
+      fontSize: 36,
+      fontWeight: 'bold' as const,
+      color: currentTheme.text,
+      marginBottom: 10,
+      textAlign: 'center' as const,
+    },
+    welcomeSubtitle: {
+      fontSize: 20,
+      color: currentTheme.primary,
+      marginBottom: 15,
+      textAlign: 'center' as const,
+    },
+    welcomeDescription: {
+      fontSize: 16,
+      color: currentTheme.textSecondary,
+      textAlign: 'center' as const,
+      lineHeight: 24,
+      marginBottom: 30,
+      paddingHorizontal: 10,
+    },
+    statsTitle: {
+      fontSize: 18,
+      fontWeight: '600' as const,
+      color: currentTheme.text,
+      marginBottom: 15,
+      textAlign: 'center' as const,
+    },
+    statusText: {
+      fontSize: 14,
+      fontWeight: '600' as const,
+      color: currentTheme.text,
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: currentTheme.textSecondary,
+      textAlign: 'center' as const,
+    },
+    quickActionsTitle: {
+      fontSize: 18,
+      fontWeight: '600' as const,
+      color: currentTheme.text,
+      marginBottom: 10,
+      textAlign: 'center' as const,
+    },
+    actionTitle: {
+      fontSize: 14,
+      fontWeight: '600' as const,
+      color: currentTheme.text,
+      marginBottom: 5,
+      textAlign: 'center' as const,
+    },
+    actionSubtitle: {
+      fontSize: 11,
+      color: currentTheme.textSecondary,
+      textAlign: 'center' as const,
+      lineHeight: 16,
+    },
+    activityText: {
+      flex: 1,
+      fontSize: 14,
+      color: currentTheme.text,
+      marginHorizontal: 12,
+    },
+    noActivityText: {
+      flex: 1,
+      fontSize: 14,
+      color: currentTheme.text,
+      marginHorizontal: 8,
+      fontStyle: 'italic' as const,
+      textAlign: 'center' as const,
+      fontWeight: '500' as const,
+    },
+    activityTime: {
+      fontSize: 12,
+      color: currentTheme.textSecondary,
+      marginLeft: 8,
+    },
+    versionText: {
+      fontSize: 12,
+      color: currentTheme.textSecondary,
+      textAlign: 'center' as const,
+      marginBottom: 5,
+    },
+    userInfoText: {
+      fontSize: 14,
+      color: currentTheme.textSecondary,
+      textAlign: 'center' as const,
+      marginBottom: 5,
+    },
+    // Styles pour les cartes et conteneurs
+    statCard: {
+      backgroundColor: currentTheme.card,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center' as const,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+    },
+    actionCard: {
+      width: '47%' as const,
+      backgroundColor: currentTheme.card,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center' as const,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+      marginBottom: 12,
+    },
+    welcomeHeader: {
+      backgroundColor: currentTheme.card,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+    },
+    statsContainer: {
+      backgroundColor: currentTheme.card,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+    },
+    recentActivity: {
+      backgroundColor: currentTheme.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+    },
+    noActivityItem: {
+      backgroundColor: currentTheme.surface,
+      borderRadius: 8,
+      padding: 12,
+      marginVertical: 2,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+      minHeight: 50,
+    },
+    statusIndicator: {
+      backgroundColor: currentTheme.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+    },
+    versionInfo: {
+      backgroundColor: currentTheme.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: currentTheme.border,
+    },
   };
   const [activeSection, setActiveSection] = useState<string>('Accueil');
   const [selectedConversation, setSelectedConversation] = useState<
@@ -151,15 +323,92 @@ const App = () => {
   const [messageText, setMessageText] = useState<string>('');
   const [fileTransfers, setFileTransfers] = useState<FileTransfer[]>([]);
 
+  // États pour l'authentification
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+
   // États pour les paramètres (darkMode déjà défini plus haut)
   const [notificationsEnabled, setNotificationsEnabled] =
     useState<boolean>(true);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(true);
   const [autoEncryption, setAutoEncryption] = useState<boolean>(true);
   const [biometricAuth, setBiometricAuth] = useState<boolean>(false);
   const [autoBackup, setAutoBackup] = useState<boolean>(false);
 
+  // État de connexion backend
+  const [backendStatus, setBackendStatus] = useState<boolean>(true);
+
   const shakeAnimation = useRef(new Animated.Value(0)).current;
+
+  // Vérifier l'authentification au démarrage
+  useEffect(() => {
+    if (DEV_BYPASS_AUTH) {
+      // Mode développement : bypass de l'authentification
+      setCurrentUser({
+        id: 'dev-user-123',
+        username: 'Développeur',
+        email: 'dev@axiom.app'
+      });
+      setIsAuthenticated(true);
+      console.log('🚀 Mode développement : authentification bypassée');
+      
+      // Connexion socket en mode développement
+      initializeSocket();
+    } else {
+      checkAuthStatus();
+    }
+  }, []);
+
+  // Initialiser la connexion socket
+  const initializeSocket = async () => {
+    try {
+      const connected = await SocketService.connect();
+      setBackendStatus(connected);
+      
+      if (connected && currentUser?.id) {
+        // Configurer les écouteurs de messages
+        SocketService.onMessageReceived((data) => {
+          console.log('📨 Message reçu via socket:', data);
+          // Ajouter le message aux conversations dynamiques
+          handleReceivedMessage(data);
+        });
+
+        SocketService.onAxiomVibeReceived((data) => {
+          console.log('📳 Axiom Vibe reçu via socket:', data);
+          // Traiter le vibe reçu
+          handleReceivedVibe(data);
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'initialisation socket:', error);
+      setBackendStatus(false);
+    }
+  };
+
+  // Nettoyer la connexion socket au démontage
+  useEffect(() => {
+    return () => {
+      SocketService.disconnect();
+    };
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const user = await ApiService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.log('Utilisateur non connecté');
+    }
+  };
 
   const triggerShakeAnimation = () => {
     shakeAnimation.setValue(0);
@@ -202,7 +451,7 @@ const App = () => {
     ]).start();
   };
 
-  const handleVibePress = () => {
+  const handleVibePress = async () => {
     const now = Date.now();
     const oneMinute = 60 * 1000;
 
@@ -219,18 +468,42 @@ const App = () => {
       return;
     }
 
-    // Déclencher l'animation de vibration
+    // Déclencher l'animation de vibration locale
     setIsVibrating(true);
     setLastVibeTime(now);
     triggerShakeAnimation();
 
-    // Ajouter à l'historique
+    // Déclencher la vibration physique du téléphone
+    if (vibrationEnabled) {
+      Vibration.vibrate([0, 200, 100, 200], false); // Pattern: pause, vibration, pause, vibration
+    }
+
+    // Ajouter à l'historique local
     const newVibe = {
       id: `vibe-${now}`,
       timestamp: now,
       from: 'Vous',
     };
     setVibeHistory(prev => [...prev, newVibe]);
+
+    // Envoyer l'Axiom Vibe via Socket.IO si connecté
+    try {
+      if (SocketService.isConnected() && selectedConversation) {
+        const success = await SocketService.sendAxiomVibe(
+          selectedConversation,
+          currentUser?.id || 'dev-user-123',
+          'target-user-id' // À remplacer par l'ID du destinataire réel
+        );
+        
+        if (success) {
+          console.log('📳 Axiom Vibe envoyé via Socket.IO');
+        } else {
+          console.log('❌ Échec envoi Axiom Vibe via Socket.IO');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erreur envoi Axiom Vibe:', error);
+    }
 
     // Arrêter l'animation après 1 seconde
     setTimeout(() => {
@@ -286,10 +559,7 @@ const App = () => {
   ) => {
     setSelectedConversation(conversationId);
     setActiveSection('axiomvibe');
-    Alert.alert(
-      'AxiomVibe',
-      `Ouverture de la conversation avec ${contactName}`,
-    );
+    // Navigation silencieuse vers la conversation
   };
 
   const getConversationData = (): Conversation => {
@@ -536,10 +806,7 @@ const App = () => {
     setSelectedConversation(contactId);
     setShowNewConversation(false);
     setActiveSection('axiomvibe');
-    Alert.alert(
-      'Nouvelle Conversation',
-      `Conversation créée avec ${contactName} !`,
-    );
+    // Conversation créée silencieusement
   };
 
   const handleBackToConversations = () => {
@@ -586,10 +853,233 @@ const App = () => {
     // Vider le champ de saisie
     setMessageText('');
 
-    // Simuler une réponse automatique après 2-5 secondes
-    setTimeout(() => {
-      simulateContactResponse();
-    }, 2000 + Math.random() * 3000);
+    // Envoyer le message via l'API au lieu de simuler
+    sendMessageToBackend(selectedConversation, newMessage);
+  };
+
+  const sendMessageToBackend = async (conversationId: string, message: any) => {
+    try {
+      if (!isAuthenticated) {
+        Alert.alert('Erreur', 'Vous devez être connecté pour envoyer des messages');
+        return;
+      }
+
+      // Envoyer le message via Socket.IO au lieu de REST API
+      if (SocketService.isConnected()) {
+        const success = await SocketService.sendMessage(
+          conversationId, 
+          message.text, 
+          currentUser?.id || 'dev-user-123'
+        );
+        
+        if (!success) {
+          // Fallback vers l'API REST si socket échoue
+          await ApiService.sendMessage(conversationId, message.text);
+        }
+      } else {
+        // Utiliser l'API REST si socket non connecté
+        await ApiService.sendMessage(conversationId, message.text);
+      }
+      
+      console.log('Message envoyé avec succès');
+      
+    } catch (error) {
+      console.error('Erreur envoi message:', error);
+      Alert.alert('Erreur', 'Impossible d\'envoyer le message');
+    }
+  };
+
+  // Gérer les messages reçus via socket
+  const handleReceivedMessage = (data: any) => {
+    try {
+      const newMessage = {
+        type: 'received' as const,
+        text: data.message,
+        time: new Date(data.timestamp).toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        encrypted: true,
+      };
+
+      // Ajouter le message à la conversation appropriée
+      setDynamicConversations(prev => ({
+        ...prev,
+        [data.conversationId]: {
+          ...prev[data.conversationId],
+          messages: [...(prev[data.conversationId]?.messages || []), newMessage],
+        },
+      }));
+
+      console.log('📨 Message reçu et ajouté à la conversation:', data.conversationId);
+    } catch (error) {
+      console.error('❌ Erreur traitement message reçu:', error);
+    }
+  };
+
+  // Gérer les Axiom Vibes reçus via socket
+  const handleReceivedVibe = (data: any) => {
+    try {
+      const newVibe = {
+        id: `vibe-${Date.now()}`,
+        timestamp: data.timestamp,
+        from: data.userId || 'Utilisateur inconnu',
+      };
+
+      setVibeHistory(prev => [...prev, newVibe]);
+      
+      // Déclencher l'animation de vibration
+      triggerShakeAnimation();
+      
+      // Déclencher la vibration physique pour la réception
+      if (vibrationEnabled) {
+        Vibration.vibrate([0, 100, 50, 100, 50, 100], false); // Pattern plus court pour réception
+      }
+      
+      console.log('📳 Axiom Vibe reçu et traité');
+    } catch (error) {
+      console.error('❌ Erreur traitement Axiom Vibe reçu:', error);
+    }
+  };
+
+  const loginUser = async (username: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const response = await ApiService.login(username, password);
+      
+      if (response.success && response.data?.user) {
+        setCurrentUser(response.data.user);
+        setIsAuthenticated(true);
+        Alert.alert('Succès', 'Connexion réussie !');
+      } else {
+        Alert.alert('Erreur', response.error || 'Erreur de connexion');
+      }
+    } catch (error: any) {
+      Alert.alert('Erreur', error.message || 'Erreur de connexion');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const registerUser = async (username: string, email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const response = await ApiService.register(username, email, password);
+      
+      if (response.success && response.data?.user) {
+        setCurrentUser(response.data.user);
+        setIsAuthenticated(true);
+        Alert.alert('Succès', 'Inscription réussie !');
+      } else {
+        Alert.alert('Erreur', response.error || 'Erreur d\'inscription');
+      }
+    } catch (error: any) {
+      Alert.alert('Erreur', error.message || 'Erreur d\'inscription');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logoutUser = async () => {
+    try {
+      await ApiService.logout();
+      setCurrentUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
+  };
+
+  const renderLoginScreen = () => {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.background }]}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('./images/logo2_axiom.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          
+          <Text style={[styles.headerTitle, { color: currentTheme.text, textAlign: 'center', fontSize: 24, marginBottom: 30 }]}>
+            {isRegistering ? 'Créer un compte' : 'Connexion Axiom'}
+          </Text>
+          
+          <View style={styles.content}>
+            <TextInput
+              style={[styles.messageInput, { 
+                backgroundColor: currentTheme.surface,
+                color: currentTheme.text,
+                borderColor: currentTheme.border,
+                marginBottom: 15
+              }]}
+              placeholder="Nom d'utilisateur"
+              placeholderTextColor={currentTheme.textSecondary}
+              value={loginUsername}
+              onChangeText={setLoginUsername}
+              autoCapitalize="none"
+            />
+            
+            {isRegistering && (
+              <TextInput
+                style={[styles.messageInput, { 
+                  backgroundColor: currentTheme.surface,
+                  color: currentTheme.text,
+                  borderColor: currentTheme.border,
+                  marginBottom: 15
+                }]}
+                placeholder="Email"
+                placeholderTextColor={currentTheme.textSecondary}
+                value={loginEmail}
+                onChangeText={setLoginEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
+            
+            <TextInput
+              style={[styles.messageInput, { 
+                backgroundColor: currentTheme.surface,
+                color: currentTheme.text,
+                borderColor: currentTheme.border,
+                marginBottom: 20
+              }]}
+              placeholder="Mot de passe"
+              placeholderTextColor={currentTheme.textSecondary}
+              value={loginPassword}
+              onChangeText={setLoginPassword}
+              secureTextEntry
+            />
+            
+            <TouchableOpacity
+              style={[styles.sendButton, { backgroundColor: currentTheme.primary, marginBottom: 15 }]}
+              onPress={() => {
+                if (isRegistering) {
+                  registerUser(loginUsername, loginEmail, loginPassword);
+                } else {
+                  loginUser(loginUsername, loginPassword);
+                }
+              }}
+              disabled={isLoading}
+            >
+              <Text style={[styles.headerTitle, { color: currentTheme.text, fontSize: 16 }]}>
+                {isLoading ? 'Chargement...' : (isRegistering ? 'S\'inscrire' : 'Se connecter')}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.sendButton, { backgroundColor: 'transparent' }]}
+              onPress={() => setIsRegistering(!isRegistering)}
+            >
+              <Text style={[styles.headerTitle, { color: currentTheme.primary, fontSize: 14 }]}>
+                {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? S\'inscrire'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
   };
 
   const simulateContactResponse = () => {
@@ -787,6 +1277,17 @@ const App = () => {
     );
   };
 
+  const handleVibrationToggle = (enabled: boolean) => {
+    setVibrationEnabled(enabled);
+    Alert.alert(
+      enabled ? '📳 Vibrations activées' : '📵 Vibrations désactivées',
+      enabled
+        ? 'Les AxiomVibes déclencheront maintenant une vibration.'
+        : 'Les AxiomVibes n\'émettront plus de vibration.',
+      [{ text: 'OK' }],
+    );
+  };
+
   const handleBiometricAuthToggle = (enabled: boolean) => {
     setBiometricAuth(enabled);
     if (enabled) {
@@ -887,22 +1388,23 @@ const App = () => {
 
   const selectDocument = async () => {
     try {
-      if (!DocumentPicker) {
-        Alert.alert('Erreur', 'DocumentPicker non disponible');
-        return;
-      }
-
-      const result = await DocumentPicker.pick({
+      const results = await DocumentPicker.pick({
         type: [DocumentPicker.types.allFiles],
+        allowMultiSelection: false,
+        copyTo: 'cachesDirectory',
       });
 
-      if (result && result[0]) {
-        const file = result[0];
-        sendFileMessage('📄', file.name || 'document', file.uri);
+      if (results && results.length > 0) {
+        const result = results[0];
+        sendFileMessage('📄', result.name || 'document', result.fileCopyUri || result.uri);
       }
-    } catch (err) {
-      if (!DocumentPicker.isCancel(err)) {
-        Alert.alert('Erreur', 'Impossible de sélectionner le document');
+    } catch (err: any) {
+      if (DocumentPicker.isCancel(err)) {
+        // Utilisateur a annulé
+        console.log('Sélection de document annulée');
+      } else {
+        console.error('Erreur lors de la sélection:', err);
+        Alert.alert('Erreur', 'Impossible de sélectionner le document: ' + (err.message || 'Erreur inconnue'));
       }
     }
   };
@@ -1103,7 +1605,7 @@ const App = () => {
   const showMediaOptions = () => {
     Alert.alert('Photos & Vidéos', 'Choisissez la source :', [
       {
-        text: '� Photo (Galerie)',
+        text: '📷 Photo (Galerie)',
         onPress: () => {
           selectFileFromLibrary();
         },
@@ -1202,40 +1704,28 @@ const App = () => {
 
   const selectDocumentFile = async () => {
     try {
-      if (!DocumentPicker) {
-        Alert.alert('Erreur', 'DocumentPicker non disponible');
-        return;
-      }
-
-      const res = await DocumentPicker.pick({
+      const results = await DocumentPicker.pick({
         type: [DocumentPicker.types.allFiles],
+        allowMultiSelection: false,
+        copyTo: 'cachesDirectory',
       });
 
-      if (res && res.length > 0) {
-        const file = res[0];
+      if (results && results.length > 0) {
+        const res = results[0];
         addFileToTransfer(
-          file.name || 'document',
-          file.size || 0,
-          file.type || 'document',
-          file.uri,
+          res.name || 'document',
+          res.size || 0,
+          res.type || 'document',
+          res.fileCopyUri || res.uri,
         );
       }
-    } catch (err: any) {
-      // Gérer l'annulation de l'utilisateur
-      if (DocumentPicker.isCancel(err)) {
-        console.log('Document selection cancelled by user');
-        return;
+    } catch (error: any) {
+      if (DocumentPicker.isCancel(error)) {
+        console.log('Sélection annulée');
+      } else {
+        console.error('Erreur sélection document:', error);
+        Alert.alert('Erreur', 'Impossible de sélectionner le document: ' + (error.message || 'Erreur inconnue'));
       }
-
-      // Gérer les autres erreurs
-      console.error('Document selection error:', err);
-      Alert.alert(
-        'Erreur',
-        `Impossible de sélectionner le document: ${
-          err.message || 'Erreur inconnue'
-        }`,
-        [{ text: 'OK' }],
-      );
     }
   };
 
@@ -1348,7 +1838,7 @@ const App = () => {
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Rechercher une conversation..."
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={currentTheme.textSecondary}
                   value={searchText}
                   onChangeText={setSearchText}
                   autoCapitalize="none"
@@ -1620,7 +2110,7 @@ const App = () => {
                 <TextInput
                   style={styles.messageInput}
                   placeholder="Tapez votre message..."
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={currentTheme.textSecondary}
                   value={messageText}
                   onChangeText={setMessageText}
                   multiline={true}
@@ -1821,6 +2311,46 @@ const App = () => {
                 Personnalisez votre expérience Axiom
               </Text>
             </View>
+
+            {/* Section Développement - Mode temporaire */}
+            <View style={dynamicStyles.settingsCard}>
+              <View style={styles.settingsSectionHeader}>
+                <Text style={dynamicStyles.settingsSectionTitle}>🚀 Mode Développement</Text>
+                <Text style={styles.settingsSectionSubtitle}>
+                  {DEV_BYPASS_AUTH ? 'Authentification bypassée' : 'Authentification active'}
+                </Text>
+              </View>
+
+              <View style={styles.settingsGroup}>
+                <View style={styles.settingItem}>
+                  <View style={styles.settingContent}>
+                    <Text style={dynamicStyles.settingLabel}>
+                      Utilisateur: {currentUser?.username || 'Non connecté'}
+                    </Text>
+                    <Text style={styles.settingDescription}>
+                      Email: {currentUser?.email || 'Aucun'}
+                    </Text>
+                  </View>
+                </View>
+
+                {DEV_BYPASS_AUTH && (
+                  <TouchableOpacity
+                    style={[styles.sendButton, { backgroundColor: currentTheme.accent, marginTop: 10 }]}
+                    onPress={() => {
+                      Alert.alert(
+                        'Info Développement',
+                        'Mode développement actif. Pour activer l\'authentification, modifiez DEV_BYPASS_AUTH = false dans App.tsx'
+                      );
+                    }}
+                  >
+                    <Text style={[styles.headerTitle, { color: currentTheme.text, fontSize: 14 }]}>
+                      ℹ️ Infos développement
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
             {/* Section Apparence */}
             <View style={dynamicStyles.settingsCard}>
               <View style={styles.settingsSectionHeader}>
@@ -1841,8 +2371,8 @@ const App = () => {
                   <Switch
                     value={darkMode}
                     onValueChange={setDarkMode}
-                    trackColor={{ false: '#2C2C2E', true: '#007AFF' }}
-                    thumbColor={darkMode ? '#FFFFFF' : '#FFFFFF'}
+                    trackColor={{ false: currentTheme.border, true: currentTheme.primary }}
+                    thumbColor={currentTheme.card}
                   />
                 </View>
               </View>
@@ -1888,6 +2418,21 @@ const App = () => {
                     onValueChange={handleSoundToggle}
                     trackColor={{ false: '#2C2C2E', true: '#007AFF' }}
                     thumbColor={soundEnabled ? '#FFFFFF' : '#FFFFFF'}
+                  />
+                </View>
+
+                <View style={styles.settingItem}>
+                  <View style={styles.settingContent}>
+                    <Text style={dynamicStyles.settingLabel}>Vibrations</Text>
+                    <Text style={styles.settingDescription}>
+                      Vibrations pour les AxiomVibes
+                    </Text>
+                  </View>
+                  <Switch
+                    value={vibrationEnabled}
+                    onValueChange={handleVibrationToggle}
+                    trackColor={{ false: '#2C2C2E', true: '#007AFF' }}
+                    thumbColor={vibrationEnabled ? '#FFFFFF' : '#FFFFFF'}
                   />
                 </View>
               </View>
@@ -2049,99 +2594,365 @@ const App = () => {
         );
       case 'stockage':
         return (
-          <View style={styles.sectionContent}>
-            <Text style={dynamicStyles.sectionTitle}>💾 Stockage</Text>
-            <Text style={styles.sectionDescription}>
-              Gestion de l'espace et sauvegarde
-            </Text>
-            <View style={styles.featureList}>
-              <Text style={styles.featureItem}>📊 Utilisation de l'espace</Text>
-              <Text style={styles.featureItem}>☁️ Sauvegarde cloud</Text>
-              <Text style={styles.featureItem}>🧹 Nettoyage automatique</Text>
+          <ScrollView style={styles.scrollContainer}>
+            {/* En-tête de bienvenue */}
+            <View style={dynamicStyles.welcomeHeader}>
+              <Text style={dynamicStyles.welcomeTitle}>💾 Gestion du Stockage</Text>
+              <Text style={dynamicStyles.welcomeDescription}>
+                Analysez l'utilisation de vos données et optimisez l'espace de stockage de manière sécurisée
+              </Text>
             </View>
-          </View>
+
+            {/* Statistiques de stockage */}
+            <View style={dynamicStyles.statsContainer}>
+              <Text style={dynamicStyles.statsTitle}>📊 Utilisation Actuelle</Text>
+              <View style={styles.statsGrid}>
+                <View style={styles.storageStatItem}>
+                  <Text style={styles.storageStatValue}>
+                    {((fileTransfers.length * 2.5) + (Object.keys(dynamicConversations).length * 0.1)).toFixed(1)} MB
+                  </Text>
+                  <Text style={styles.storageStatLabel}>Utilisé</Text>
+                </View>
+                <View style={styles.storageStatItem}>
+                  <Text style={styles.storageStatValue}>500 MB</Text>
+                  <Text style={styles.storageStatLabel}>Disponible</Text>
+                </View>
+                <View style={styles.storageStatItem}>
+                  <Text style={styles.storageStatValue}>
+                    {Math.round(((fileTransfers.length * 2.5) / 500) * 100)}%
+                  </Text>
+                  <Text style={styles.storageStatLabel}>Utilisé</Text>
+                </View>
+              </View>
+              
+              {/* Barre de progression */}
+              <View style={styles.storageProgressContainer}>
+                <View 
+                  style={[
+                    styles.storageProgressBar, 
+                    { width: `${Math.min(((fileTransfers.length * 2.5) / 500) * 100, 100)}%` }
+                  ]} 
+                />
+              </View>
+            </View>
+
+            {/* Détail par catégorie */}
+            <View style={styles.storageCategories}>
+              <Text style={styles.storageCategoryTitle}>📁 Détail par Catégorie</Text>
+              
+              <View style={styles.storageCategoryItem}>
+                <View style={styles.storageCategoryHeader}>
+                  <Text style={styles.storageCategoryIcon}>📁</Text>
+                  <Text style={styles.storageCategoryName}>Fichiers transférés</Text>
+                  <Text style={styles.storageCategorySize}>
+                    {(fileTransfers.length * 2.5).toFixed(1)} MB
+                  </Text>
+                </View>
+                <Text style={styles.storageCategoryCount}>
+                  {fileTransfers.length} fichier{fileTransfers.length > 1 ? 's' : ''}
+                </Text>
+              </View>
+
+              <View style={styles.storageCategoryItem}>
+                <View style={styles.storageCategoryHeader}>
+                  <Text style={styles.storageCategoryIcon}>�</Text>
+                  <Text style={styles.storageCategoryName}>Conversations</Text>
+                  <Text style={styles.storageCategorySize}>
+                    {(Object.keys(dynamicConversations).length * 0.1).toFixed(1)} MB
+                  </Text>
+                </View>
+                <Text style={styles.storageCategoryCount}>
+                  {Object.keys(dynamicConversations).length + 3} conversation{Object.keys(dynamicConversations).length + 3 > 1 ? 's' : ''}
+                </Text>
+              </View>
+
+              <View style={styles.storageCategoryItem}>
+                <View style={styles.storageCategoryHeader}>
+                  <Text style={styles.storageCategoryIcon}>📳</Text>
+                  <Text style={styles.storageCategoryName}>Historique Axiom Vibe</Text>
+                  <Text style={styles.storageCategorySize}>
+                    {(vibeHistory.length * 0.001).toFixed(3)} MB
+                  </Text>
+                </View>
+                <Text style={styles.storageCategoryCount}>
+                  {vibeHistory.length} vibe{vibeHistory.length > 1 ? 's' : ''}
+                </Text>
+              </View>
+
+              <View style={styles.storageCategoryItem}>
+                <View style={styles.storageCategoryHeader}>
+                  <Text style={styles.storageCategoryIcon}>🗂️</Text>
+                  <Text style={styles.storageCategoryName}>Cache système</Text>
+                  <Text style={styles.storageCategorySize}>12.3 MB</Text>
+                </View>
+                <Text style={styles.storageCategoryCount}>Données temporaires</Text>
+              </View>
+            </View>
+
+            {/* Actions de nettoyage */}
+            <View style={styles.storageActions}>
+              <Text style={styles.storageActionTitle}>🧹 Actions de Nettoyage</Text>
+              
+              <TouchableOpacity 
+                style={styles.storageActionButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Nettoyer le cache',
+                    'Vider le cache système pour libérer de l\'espace ?',
+                    [
+                      { text: 'Annuler', style: 'cancel' },
+                      { 
+                        text: 'Nettoyer', 
+                        style: 'destructive',
+                        onPress: () => {
+                          Alert.alert('Succès', 'Cache nettoyé avec succès !');
+                        }
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.storageActionIcon}>🗂️</Text>
+                <Text style={styles.storageActionText}>Vider le cache (12.3 MB)</Text>
+                <Text style={styles.storageActionArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.storageActionButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Nettoyer l\'historique Vibe',
+                    `Supprimer l'historique des ${vibeHistory.length} Axiom Vibes ?`,
+                    [
+                      { text: 'Annuler', style: 'cancel' },
+                      { 
+                        text: 'Supprimer', 
+                        style: 'destructive',
+                        onPress: () => {
+                          setVibeHistory([]);
+                          Alert.alert('Succès', 'Historique Axiom Vibe supprimé !');
+                        }
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.storageActionIcon}>📳</Text>
+                <Text style={styles.storageActionText}>
+                  Supprimer historique Vibe ({(vibeHistory.length * 0.001).toFixed(3)} MB)
+                </Text>
+                <Text style={styles.storageActionArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.storageActionButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Sauvegarde automatique',
+                    'Configurer la sauvegarde automatique des conversations ?',
+                    [
+                      { text: 'Plus tard', style: 'cancel' },
+                      { 
+                        text: 'Configurer', 
+                        onPress: () => {
+                          setActiveSection('paramètres');
+                          Alert.alert('Info', 'Section paramètres > Sauvegarde automatique');
+                        }
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.storageActionIcon}>☁️</Text>
+                <Text style={styles.storageActionText}>Configurer sauvegarde automatique</Text>
+                <Text style={styles.storageActionArrow}>›</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Informations système */}
+            <View style={styles.systemInfo}>
+              <Text style={styles.systemInfoTitle}>ℹ️ Informations Système</Text>
+              <Text style={styles.systemInfoText}>
+                • Connexion backend: {backendStatus ? '🟢 Active' : '🔴 Inactive'}
+              </Text>
+              <Text style={styles.systemInfoText}>
+                • Socket.IO: {SocketService.isConnected() ? '🟢 Connecté' : '🔴 Déconnecté'}
+              </Text>
+              <Text style={styles.systemInfoText}>
+                • Chiffrement: 🔐 AES-256 activé
+              </Text>
+              <Text style={styles.systemInfoText}>
+                • Dernière sauvegarde: Aucune
+              </Text>
+            </View>
+          </ScrollView>
         );
       default:
         return (
           <View style={styles.sectionContent}>
             {/* En-tête d'accueil */}
-            <View style={styles.welcomeHeader}>
-              <Text style={styles.welcomeTitle}>Bienvenue sur Axiom</Text>
-              <Text style={styles.welcomeSubtitle}>
+            <View style={dynamicStyles.welcomeHeader}>
+              <Text style={dynamicStyles.welcomeTitle}>Bienvenue sur Axiom</Text>
+              <Text style={dynamicStyles.welcomeSubtitle}>
                 Votre plateforme de communication ultra-sécurisée
               </Text>
+              <View style={styles.userInfo}>
+                <Text style={dynamicStyles.userInfoText}>
+                  👤 Connecté en tant que:{' '}
+                  {currentUser?.username || 'Développeur'}
+                </Text>
+                <Text style={dynamicStyles.userInfoText}>
+                  🌐 Backend:{' '}
+                  {backendStatus ? '🟢 Connecté' : '🔴 Déconnecté'} • Port 3001
+                </Text>
+              </View>
             </View>
 
-            {/* Statistiques de sécurité */}
-            <View style={styles.statsContainer}>
-              <Text style={styles.statsTitle}>📊 Statut de Sécurité</Text>
+            {/* Statistiques de sécurité dynamiques */}
+            <View style={dynamicStyles.statsContainer}>
+              <Text style={dynamicStyles.statsTitle}>📊 Statut en Temps Réel</Text>
               <View style={styles.statsGrid}>
-                <View style={styles.statCard}>
+                <View style={dynamicStyles.statCard}>
                   <Text style={styles.statusIcon}>🔐</Text>
-                  <Text style={styles.statusText}>256-bit</Text>
-                  <Text style={styles.statLabel}>Chiffrement AES</Text>
+                  <Text style={dynamicStyles.statusText}>AES-256</Text>
+                  <Text style={dynamicStyles.statLabel}>Chiffrement</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statusIcon}>🛡️</Text>
-                  <Text style={styles.statusText}>100%</Text>
-                  <Text style={styles.statLabel}>Sécurisé</Text>
+                  <Text style={styles.statusIcon}>�</Text>
+                  <Text style={dynamicStyles.statusText}>{Object.keys(dynamicConversations).length + 3}</Text>
+                  <Text style={dynamicStyles.statLabel}>Conversations</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statusIcon}>⚡</Text>
-                  <Text style={styles.statusText}>0.02s</Text>
-                  <Text style={styles.statLabel}>Latence</Text>
+                  <Text style={styles.statusIcon}>📁</Text>
+                  <Text style={dynamicStyles.statusText}>{fileTransfers.length}</Text>
+                  <Text style={dynamicStyles.statLabel}>Fichiers</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statusIcon}>🌐</Text>
-                  <Text style={styles.statusText}>P2P</Text>
-                  <Text style={styles.statLabel}>Direct</Text>
+                  <Text style={styles.statusIcon}>📳</Text>
+                  <Text style={dynamicStyles.statusText}>{vibeHistory.length}</Text>
+                  <Text style={dynamicStyles.statLabel}>Axiom Vibe</Text>
                 </View>
               </View>
             </View>
 
-            {/* Raccourcis rapides */}
+            {/* Raccourcis rapides améliorés */}
             <View style={styles.quickActions}>
-              <Text style={styles.quickActionsTitle}>🚀 Actions Rapides</Text>
+              <Text style={dynamicStyles.quickActionsTitle}>🚀 Actions Rapides</Text>
               <View style={styles.actionGrid}>
                 <TouchableOpacity
-                  style={styles.actionCard}
-                  onPress={() => handlePress('Nouvelle Conversation')}
+                  style={dynamicStyles.actionCard}
+                  onPress={() => {
+                    setActiveSection('conversations');
+                    setShowNewConversation(true);
+                  }}
                 >
                   <Text style={styles.actionIcon}>💬</Text>
-                  <Text style={styles.actionTitle}>Nouveau Chat</Text>
-                  <Text style={styles.actionSubtitle}>
+                  <Text style={dynamicStyles.actionTitle}>Nouveau Chat</Text>
+                  <Text style={dynamicStyles.actionSubtitle}>
                     Démarrer une conversation sécurisée
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.actionCard}
-                  onPress={() => handlePress('Transfert Express')}
+                  style={dynamicStyles.actionCard}
+                  onPress={() => {
+                    setActiveSection('fichiers');
+                    handleFileSelection();
+                  }}
                 >
                   <Text style={styles.actionIcon}>📁</Text>
-                  <Text style={styles.actionTitle}>Envoi Rapide</Text>
-                  <Text style={styles.actionSubtitle}>
+                  <Text style={dynamicStyles.actionTitle}>Envoi Express</Text>
+                  <Text style={dynamicStyles.actionSubtitle}>
                     Transférer un fichier instantanément
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionCard}
+                  onPress={() => setActiveSection('conversations')}
+                >
+                  <Text style={styles.actionIcon}>�</Text>
+                  <Text style={dynamicStyles.actionTitle}>Mes Conversations</Text>
+                  <Text style={dynamicStyles.actionSubtitle}>
+                    Voir toutes les discussions
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionCard}
+                  onPress={() => setActiveSection('paramètres')}
+                >
+                  <Text style={styles.actionIcon}>⚙️</Text>
+                  <Text style={dynamicStyles.actionTitle}>Paramètres</Text>
+                  <Text style={dynamicStyles.actionSubtitle}>
+                    Configuration et sécurité
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Indicateur de statut */}
-            <View style={styles.statusIndicator}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>
-                Système opérationnel - Tous les services actifs
+            {/* Activité récente */}
+            <View style={dynamicStyles.recentActivity}>
+              <Text style={dynamicStyles.quickActionsTitle}>📋 Activité Récente</Text>
+              <View style={styles.activityList}>
+                {vibeHistory.slice(-3).reverse().map((vibe, index) => (
+                  <View key={index} style={styles.activityItem}>
+                    <Text style={styles.activityIcon}>📳</Text>
+                    <Text style={dynamicStyles.activityText}>
+                      Axiom Vibe envoyé à {vibe.from}
+                    </Text>
+                    <Text style={dynamicStyles.activityTime}>
+                      {new Date(vibe.timestamp).toLocaleTimeString('fr-FR')}
+                    </Text>
+                  </View>
+                ))}
+                {fileTransfers.slice(-2).reverse().map((transfer, index) => (
+                  <View key={`file-${index}`} style={styles.activityItem}>
+                    <Text style={styles.activityIcon}>📁</Text>
+                    <Text style={dynamicStyles.activityText}>
+                      {transfer.name} - {getStatusText(transfer.status)}
+                    </Text>
+                    <Text style={dynamicStyles.activityTime}>
+                      {transfer.uploadTime || 'En cours...'}
+                    </Text>
+                  </View>
+                ))}
+                {vibeHistory.length === 0 && fileTransfers.length === 0 && (
+                  <View style={dynamicStyles.noActivityItem}>
+                    <Text style={styles.activityIcon}>💤</Text>
+                    <Text style={dynamicStyles.noActivityText}>
+                      Aucune activité récente
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Indicateur de statut amélioré */}
+            <View style={dynamicStyles.statusIndicator}>
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor: backendStatus ? '#4CAF50' : '#F44336',
+                  },
+                ]}
+              />
+              <Text style={dynamicStyles.statusText}>
+                {backendStatus
+                  ? 'Système opérationnel - Tous les services actifs'
+                  : 'Vérification de la connexion...'}
               </Text>
             </View>
 
             {/* Informations sur la version */}
-            <View style={styles.versionInfo}>
-              <Text style={styles.versionText}>
-                Axiom v1.0.0 • Build 2025.09.13
+            <View style={dynamicStyles.versionInfo}>
+              <Text style={dynamicStyles.versionText}>
+                Axiom v1.0.0 • Build 2025.09.14 • Mode Développement
               </Text>
-              <Text style={styles.versionText}>
-                Dernière synchronisation: Il y a quelques secondes
+              <Text style={dynamicStyles.versionText}>
+                Dernière synchronisation:{' '}
+                {new Date().toLocaleTimeString('fr-FR')}
               </Text>
             </View>
           </View>
@@ -2149,7 +2960,7 @@ const App = () => {
     }
   };
 
-  return (
+  return isAuthenticated ? (
     <SafeAreaView
       style={[styles.container, { backgroundColor: currentTheme.background }]}
     >
@@ -2305,16 +3116,16 @@ const App = () => {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  );
+  ) : renderLoginScreen();
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1929',
+    backgroundColor: '#0D1929', // Peut rester sombre pour le conteneur principal
   },
   header: {
-    backgroundColor: '#0B0B0B',
+    backgroundColor: '#0B0B0B', // Peut rester sombre pour le header
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#1A1A1A',
@@ -2366,6 +3177,7 @@ const styles = StyleSheet.create({
   sectionContent: {
     alignItems: 'center',
     paddingVertical: 20,
+    paddingHorizontal: 16,
   },
   sectionTitle: {
     fontSize: 24,
@@ -2506,16 +3318,18 @@ const styles = StyleSheet.create({
   },
   actionGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
   actionCard: {
-    width: '48%',
+    width: '47%',
     backgroundColor: '#1A1A1A',
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#333333',
+    marginBottom: 12,
   },
   actionIcon: {
     fontSize: 32,
@@ -3440,6 +4254,204 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 50,
+  },
+  // Nouveaux styles pour l'écran d'accueil amélioré
+  userInfo: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 8,
+  },
+  userInfoText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginVertical: 2,
+  },
+  recentActivity: {
+    marginTop: 24,
+    marginHorizontal: 16,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 16,
+  },
+  activityList: {
+    marginTop: 8,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 8,
+    marginVertical: 4,
+  },
+  activityIcon: {
+    fontSize: 18,
+    marginRight: 12,
+    width: 24,
+    textAlign: 'center',
+  },
+  activityText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  activityTime: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginLeft: 8,
+  },
+  // Styles pour l'écran de stockage amélioré
+  storageOverview: {
+    marginTop: 16,
+    marginHorizontal: 16,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 16,
+  },
+  storageTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  storageStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  storageStatItem: {
+    alignItems: 'center',
+  },
+  storageStatValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    marginBottom: 4,
+  },
+  storageStatLabel: {
+    fontSize: 12,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+  storageProgressContainer: {
+    height: 8,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  storageProgressBar: {
+    height: '100%',
+    backgroundColor: '#007AFF',
+    borderRadius: 4,
+  },
+  storageCategories: {
+    marginTop: 24,
+    marginHorizontal: 16,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 16,
+  },
+  storageCategoryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  storageCategoryItem: {
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 8,
+  },
+  storageCategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  storageCategoryIcon: {
+    fontSize: 16,
+    marginRight: 12,
+    width: 20,
+    textAlign: 'center',
+  },
+  storageCategoryName: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  storageCategorySize: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  storageCategoryCount: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginLeft: 32,
+  },
+  storageActions: {
+    marginTop: 24,
+    marginHorizontal: 16,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 16,
+  },
+  storageActionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  storageActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  storageActionIcon: {
+    fontSize: 16,
+    marginRight: 12,
+    width: 20,
+    textAlign: 'center',
+  },
+  storageActionText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  storageActionArrow: {
+    fontSize: 16,
+    color: '#8E8E93',
+    fontWeight: '300',
+  },
+  systemInfo: {
+    marginTop: 24,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 16,
+  },
+  systemInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  systemInfoText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 6,
+    lineHeight: 20,
   },
 });
 

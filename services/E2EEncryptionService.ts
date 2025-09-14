@@ -1,7 +1,7 @@
 // Utilisation standard de crypto-js
 // Si Metro pose problème, on peut revenir à require() avec un @ts-ignore
 import CryptoJS from 'crypto-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAsyncStorage from '../utils/SafeAsyncStorage';
 import * as Keychain from 'react-native-keychain';
 // libsodium-like via tweetnacl
 import nacl from 'tweetnacl';
@@ -162,18 +162,18 @@ class E2EEncryptionService {
         }
       } catch (kcErr) {
         console.warn(
-          'Keychain non disponible ou lecture échouée, fallback AsyncStorage',
+          'Keychain non disponible ou lecture échouée, fallback SafeAsyncStorage',
           kcErr,
         );
       }
 
-      // Fallback: AsyncStorage
-      const keysJson = await AsyncStorage.getItem('@axiom_user_keys');
+      // Fallback: SafeAsyncStorage
+      const keysJson = await SafeAsyncStorage.getItem('@axiom_user_keys');
       if (keysJson) {
         const parsed = JSON.parse(keysJson);
         this.userKeyPair = parsed;
         if (parsed.sodiumKeyPair) this.sodiumKeyPair = parsed.sodiumKeyPair;
-        console.log('Clés utilisateur chargées depuis AsyncStorage');
+        console.log('Clés utilisateur chargées depuis SafeAsyncStorage');
       }
     } catch (error) {
       console.error('Erreur chargement clés:', error);
@@ -195,17 +195,17 @@ class E2EEncryptionService {
         return;
       } catch (kcErr) {
         console.warn(
-          "Impossible d'écrire dans Keychain, fallback vers AsyncStorage",
+          "Impossible d'écrire dans Keychain, fallback vers SafeAsyncStorage",
           kcErr,
         );
       }
 
-      // Fallback: AsyncStorage (moins sécurisé)
+      // Fallback: SafeAsyncStorage (moins sécurisé)
       const toSaveFallback = {
         ...this.userKeyPair,
         sodiumKeyPair: this.sodiumKeyPair,
       };
-      await AsyncStorage.setItem(
+      await SafeAsyncStorage.setItem(
         '@axiom_user_keys',
         JSON.stringify(toSaveFallback),
       );
@@ -599,7 +599,7 @@ class E2EEncryptionService {
    */
   async resetKeys(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('@axiom_user_keys');
+      await SafeAsyncStorage.removeItem('@axiom_user_keys');
       this.userKeyPair = null;
       this.contactKeys.clear();
 
@@ -613,3 +613,4 @@ class E2EEncryptionService {
 }
 
 export default E2EEncryptionService;
+

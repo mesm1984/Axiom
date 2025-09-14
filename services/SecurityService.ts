@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAsyncStorage from '../utils/SafeAsyncStorage';
 
 export interface RateLimit {
   action: string;
@@ -416,7 +416,7 @@ class SecurityService {
   // Méthodes de persistance
   private async loadConfiguration(): Promise<void> {
     try {
-      const rateLimitsData = await AsyncStorage.getItem(this.RATE_LIMITS_KEY);
+      const rateLimitsData = await SafeAsyncStorage.getItem(this.RATE_LIMITS_KEY);
       if (rateLimitsData) {
         const parsed = JSON.parse(rateLimitsData);
         Object.entries(parsed).forEach(([key, value]) => {
@@ -424,7 +424,7 @@ class SecurityService {
         });
       }
 
-      const blockedUsersData = await AsyncStorage.getItem(
+      const blockedUsersData = await SafeAsyncStorage.getItem(
         this.BLOCKED_USERS_KEY,
       );
       if (blockedUsersData) {
@@ -438,7 +438,7 @@ class SecurityService {
   private async saveRateLimits(): Promise<void> {
     try {
       const data = Object.fromEntries(this.rateLimits);
-      await AsyncStorage.setItem(this.RATE_LIMITS_KEY, JSON.stringify(data));
+      await SafeAsyncStorage.setItem(this.RATE_LIMITS_KEY, JSON.stringify(data));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des rate limits:', error);
     }
@@ -446,7 +446,7 @@ class SecurityService {
 
   private async getAllReports(): Promise<UserReporting[]> {
     try {
-      const data = await AsyncStorage.getItem(this.REPORTS_KEY);
+      const data = await SafeAsyncStorage.getItem(this.REPORTS_KEY);
       if (!data) {
         return [];
       }
@@ -463,7 +463,7 @@ class SecurityService {
 
   private async saveReports(reports: UserReporting[]): Promise<void> {
     try {
-      await AsyncStorage.setItem(this.REPORTS_KEY, JSON.stringify(reports));
+      await SafeAsyncStorage.setItem(this.REPORTS_KEY, JSON.stringify(reports));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des signalements:', error);
     }
@@ -471,7 +471,7 @@ class SecurityService {
 
   private async getAllAlerts(): Promise<SecurityAlert[]> {
     try {
-      const data = await AsyncStorage.getItem(this.ALERTS_KEY);
+      const data = await SafeAsyncStorage.getItem(this.ALERTS_KEY);
       if (!data) {
         return [];
       }
@@ -488,7 +488,7 @@ class SecurityService {
 
   private async saveAlerts(alerts: SecurityAlert[]): Promise<void> {
     try {
-      await AsyncStorage.setItem(this.ALERTS_KEY, JSON.stringify(alerts));
+      await SafeAsyncStorage.setItem(this.ALERTS_KEY, JSON.stringify(alerts));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des alertes:', error);
     }
@@ -496,7 +496,7 @@ class SecurityService {
 
   private async getAllTrustScores(): Promise<UserTrustScore[]> {
     try {
-      const data = await AsyncStorage.getItem(this.TRUST_SCORES_KEY);
+      const data = await SafeAsyncStorage.getItem(this.TRUST_SCORES_KEY);
       if (!data) {
         return [];
       }
@@ -513,7 +513,7 @@ class SecurityService {
 
   private async saveTrustScores(scores: UserTrustScore[]): Promise<void> {
     try {
-      await AsyncStorage.setItem(this.TRUST_SCORES_KEY, JSON.stringify(scores));
+      await SafeAsyncStorage.setItem(this.TRUST_SCORES_KEY, JSON.stringify(scores));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des scores:', error);
     }
@@ -521,7 +521,7 @@ class SecurityService {
 
   private async getBlockedUsers(userId: string): Promise<string[]> {
     try {
-      const data = await AsyncStorage.getItem(
+      const data = await SafeAsyncStorage.getItem(
         `${this.BLOCKED_USERS_KEY}_${userId}`,
       );
       return data ? JSON.parse(data) : [];
@@ -539,7 +539,7 @@ class SecurityService {
     blockedUsers: string[],
   ): Promise<void> {
     try {
-      await AsyncStorage.setItem(
+      await SafeAsyncStorage.setItem(
         `${this.BLOCKED_USERS_KEY}_${userId}`,
         JSON.stringify(blockedUsers),
       );
@@ -553,3 +553,4 @@ class SecurityService {
 }
 
 export default SecurityService;
+

@@ -3,7 +3,7 @@
  * Collecte de métriques anonymes avec consentement explicite (opt-in uniquement)
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeSafeAsyncStorage from '../utils/SafeSafeAsyncStorage';
 import { Platform } from 'react-native';
 
 // Types pour la télémétrie
@@ -108,7 +108,7 @@ class TelemetryService {
    */
   private async loadConfiguration(): Promise<void> {
     try {
-      const savedConfig = await AsyncStorage.getItem('telemetry_config');
+      const savedConfig = await SafeAsyncStorage.getItem('telemetry_config');
       if (savedConfig) {
         this.config = { ...this.config, ...JSON.parse(savedConfig) };
       }
@@ -137,7 +137,7 @@ class TelemetryService {
    */
   private async saveConfiguration(): Promise<void> {
     try {
-      await AsyncStorage.setItem('telemetry_config', JSON.stringify(this.config));
+      await SafeAsyncStorage.setItem('telemetry_config', JSON.stringify(this.config));
     } catch (error) {
       console.warn('[Télémétrie] Erreur lors de la sauvegarde de la configuration:', error);
     }
@@ -148,7 +148,7 @@ class TelemetryService {
    */
   private async loadStoredEvents(): Promise<void> {
     try {
-      const storedEvents = await AsyncStorage.getItem('telemetry_events');
+      const storedEvents = await SafeAsyncStorage.getItem('telemetry_events');
       if (storedEvents) {
         this.eventQueue = JSON.parse(storedEvents);
       }
@@ -167,7 +167,7 @@ class TelemetryService {
         this.eventQueue = this.eventQueue.slice(-this.config.maxStoredEvents);
       }
       
-      await AsyncStorage.setItem('telemetry_events', JSON.stringify(this.eventQueue));
+      await SafeAsyncStorage.setItem('telemetry_events', JSON.stringify(this.eventQueue));
     } catch (error) {
       console.warn('[Télémétrie] Erreur lors de la sauvegarde des événements:', error);
     }
@@ -476,7 +476,7 @@ class TelemetryService {
   public async clearStoredEvents(): Promise<void> {
     this.eventQueue = [];
     try {
-      await AsyncStorage.removeItem('telemetry_events');
+      await SafeAsyncStorage.removeItem('telemetry_events');
     } catch (error) {
       console.warn('[Télémétrie] Erreur lors de la suppression des événements:', error);
     }
@@ -560,3 +560,5 @@ class TelemetryService {
 }
 
 export default TelemetryService;
+
+

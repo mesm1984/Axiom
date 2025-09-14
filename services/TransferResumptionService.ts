@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAsyncStorage from '../utils/SafeAsyncStorage';
 import RNFS from 'react-native-fs';
 
 export interface TransferSession {
@@ -432,7 +432,7 @@ class TransferResumptionService {
         sessions.push(session);
       }
 
-      await AsyncStorage.setItem(this.SESSIONS_KEY, JSON.stringify(sessions));
+      await SafeAsyncStorage.setItem(this.SESSIONS_KEY, JSON.stringify(sessions));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de session:', error);
     }
@@ -450,7 +450,7 @@ class TransferResumptionService {
 
   private async getAllSessions(): Promise<TransferSession[]> {
     try {
-      const data = await AsyncStorage.getItem(this.SESSIONS_KEY);
+      const data = await SafeAsyncStorage.getItem(this.SESSIONS_KEY);
       if (!data) {
         return [];
       }
@@ -475,13 +475,13 @@ class TransferResumptionService {
     try {
       const sessions = await this.getAllSessions();
       const filteredSessions = sessions.filter(s => s.id !== sessionId);
-      await AsyncStorage.setItem(
+      await SafeAsyncStorage.setItem(
         this.SESSIONS_KEY,
         JSON.stringify(filteredSessions),
       );
 
       // Supprimer aussi les chunks
-      await AsyncStorage.removeItem(`${this.CHUNKS_KEY}_${sessionId}`);
+      await SafeAsyncStorage.removeItem(`${this.CHUNKS_KEY}_${sessionId}`);
 
       // Nettoyer les références locales
       this.activeSessions.delete(sessionId);
@@ -497,7 +497,7 @@ class TransferResumptionService {
     chunks: TransferChunk[],
   ): Promise<void> {
     try {
-      await AsyncStorage.setItem(
+      await SafeAsyncStorage.setItem(
         `${this.CHUNKS_KEY}_${sessionId}`,
         JSON.stringify(chunks),
       );
@@ -508,7 +508,7 @@ class TransferResumptionService {
 
   private async getSessionChunks(sessionId: string): Promise<TransferChunk[]> {
     try {
-      const data = await AsyncStorage.getItem(
+      const data = await SafeAsyncStorage.getItem(
         `${this.CHUNKS_KEY}_${sessionId}`,
       );
       return data ? JSON.parse(data) : [];
@@ -520,3 +520,4 @@ class TransferResumptionService {
 }
 
 export default TransferResumptionService;
+

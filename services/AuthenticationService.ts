@@ -12,7 +12,7 @@
  * @author Axiom Team
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAsyncStorage from '../utils/SafeAsyncStorage';
 import { Platform } from 'react-native';
 
 // Configuration des endpoints backend

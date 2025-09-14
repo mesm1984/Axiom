@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAsyncStorage from '../utils/SafeAsyncStorage';
 import RNFS from 'react-native-fs';
 
 export interface FileInfo {
@@ -135,7 +135,7 @@ class StorageManagementService {
   // Obtient tous les fichiers stockés
   async getAllFiles(): Promise<FileInfo[]> {
     try {
-      const storedData = await AsyncStorage.getItem(this.STORAGE_KEY);
+      const storedData = await SafeAsyncStorage.getItem(this.STORAGE_KEY);
       if (!storedData) {
         return [];
       }
@@ -285,7 +285,7 @@ class StorageManagementService {
   // Gestion des quotas
   async getStorageQuota(): Promise<StorageQuota> {
     try {
-      const storedQuota = await AsyncStorage.getItem(this.QUOTA_KEY);
+      const storedQuota = await SafeAsyncStorage.getItem(this.QUOTA_KEY);
       if (storedQuota) {
         return JSON.parse(storedQuota);
       }
@@ -310,7 +310,7 @@ class StorageManagementService {
 
   async setStorageQuota(quota: StorageQuota): Promise<void> {
     try {
-      await AsyncStorage.setItem(this.QUOTA_KEY, JSON.stringify(quota));
+      await SafeAsyncStorage.setItem(this.QUOTA_KEY, JSON.stringify(quota));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du quota:', error);
       throw error;
@@ -320,7 +320,7 @@ class StorageManagementService {
   // Utilitaires privés
   private async saveFilesList(files: FileInfo[]): Promise<void> {
     try {
-      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(files));
+      await SafeAsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(files));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de la liste:', error);
       throw error;
@@ -367,3 +367,4 @@ class StorageManagementService {
 }
 
 export default StorageManagementService;
+

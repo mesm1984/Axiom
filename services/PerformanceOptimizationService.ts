@@ -13,7 +13,7 @@
  */
 
 import { Dimensions, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SafeAsyncStorage from '../utils/SafeAsyncStorage';
 
 // Types et interfaces
 export interface DeviceCapabilities {
@@ -656,38 +656,38 @@ class PerformanceOptimizationService {
   private async storeDeviceCapabilities(
     capabilities: DeviceCapabilities,
   ): Promise<void> {
-    await AsyncStorage.setItem(
+    await SafeAsyncStorage.setItem(
       'axiom_device_capabilities',
       JSON.stringify(capabilities),
     );
   }
 
   private async loadDeviceCapabilities(): Promise<DeviceCapabilities | null> {
-    const stored = await AsyncStorage.getItem('axiom_device_capabilities');
+    const stored = await SafeAsyncStorage.getItem('axiom_device_capabilities');
     return stored ? JSON.parse(stored) : null;
   }
 
   private async storeProfile(profile: PerformanceProfile): Promise<void> {
-    await AsyncStorage.setItem(
+    await SafeAsyncStorage.setItem(
       'axiom_performance_profile',
       JSON.stringify(profile),
     );
   }
 
   private async loadProfile(): Promise<PerformanceProfile | null> {
-    const stored = await AsyncStorage.getItem('axiom_performance_profile');
+    const stored = await SafeAsyncStorage.getItem('axiom_performance_profile');
     return stored ? JSON.parse(stored) : null;
   }
 
   private async storeSettings(): Promise<void> {
-    await AsyncStorage.setItem(
+    await SafeAsyncStorage.setItem(
       'axiom_optimization_settings',
       JSON.stringify(this.settings),
     );
   }
 
   private async loadSettings(): Promise<void> {
-    const stored = await AsyncStorage.getItem('axiom_optimization_settings');
+    const stored = await SafeAsyncStorage.getItem('axiom_optimization_settings');
     if (stored) {
       this.settings = { ...this.settings, ...JSON.parse(stored) };
     }
@@ -697,3 +697,4 @@ class PerformanceOptimizationService {
 // Instance singleton
 const performanceService = new PerformanceOptimizationService();
 export default performanceService;
+
